@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSA 代數與幾何雙重驗證沙盤 | 李向宇老師製作</title>
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5; --c-color: #2563eb; --a-color: #f97316;
+            --h-color: #ef4444; --c1-color: #10b981; --c2-color: #8b5cf6;
+            --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0;
+        }
+        body { font-family: 'Noto Sans TC', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--card); border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--primary), #4338ca); color: white; padding: 24px; text-align: center; }
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 8px 0 0; opacity: 0.9; font-size: 14px; }
+
+        .main-content { padding: 24px; display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media (min-width: 1000px) { .main-content { grid-template-columns: 1.4fr 1fr; } }
+
+        .canvas-container { background: #fdfdfd; border: 2px dashed var(--border); border-radius: 12px; display: flex; justify-content: center; align-items: center; min-height: 450px; }
+        canvas { max-width: 100%; touch-action: none; border-radius: 8px; }
+
+        .dashboard { display: flex; flex-direction: column; gap: 20px; }
+        .panel { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .panel h3 { margin: 0 0 12px; font-size: 16px; color: var(--primary); border-bottom: 2px solid var(--primary); display: inline-block; padding-bottom: 4px; }
+
+        .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .slider-row label { font-weight: bold; min-width: 80px; font-size: 14px; }
+        .slider-row input { flex: 1; accent-color: var(--primary); }
+        .slider-row .val { font-family: monospace; font-weight: bold; color: var(--primary); min-width: 40px; text-align: right; }
+
+        .preset-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .btn { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: white; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s; color: var(--text); }
+        .btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* 代數方程區 */
+        .eq-box { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); font-family: 'Times New Roman', serif; font-size: 18px; line-height: 1.8; text-align: center; }
+        .eq-box .var-x { color: var(--primary); font-weight: bold; }
+        
+        .data-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        .data-item { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 10px 12px; background: white; border-radius: 6px; border-left: 4px solid var(--border); }
+        .math-label { font-family: 'Times New Roman', serif; font-style: italic; color: #475569; }
+        
+        .val-pos { border-left-color: var(--c1-color); color: var(--c1-color); font-weight: bold; }
+        .val-neg { border-left-color: #94a3b8; color: #94a3b8; font-weight: bold; text-decoration: line-through; }
+        .val-zero { border-left-color: #f59e0b; color: #f59e0b; font-weight: bold; }
+
+        .result-box { text-align: center; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 15px; }
+        .res-0 { background: #fee2e2; color: #991b1b; border: 2px solid #fca5a5; }
+        .res-1 { background: #d1fae5; color: #065f46; border: 2px solid #6ee7b7; }
+        .res-2 { background: #fef3c7; color: #92400e; border: 2px solid #fcd34d; }
+
+        .teacher-tip { margin-top: 20px; padding: 16px; background: #eff6ff; border-left: 4px solid var(--primary); border-radius: 6px; font-size: 14px; color: #1e3a8a; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📐 SSA 代數與幾何雙重驗證沙盤</h1>
+        <p>製作：李向宇老師 ｜ 探討餘弦定理二次方程與幾何畫圓法的完美對應</p>
+    </header>
+
+    <div class="main-content">
+        <div class="canvas-panel">
+            <div class="canvas-container">
+                <canvas id="geoCanvas" width="600" height="450"></canvas>
+            </div>
+            
+            <div>
+                <div style="font-weight:bold; margin-bottom:8px; color:#475569; font-size:14px;">🚀 經典大考與文章情境 (點擊載入)：</div>
+                <div class="preset-btns" id="preset-btns">
+                    <button class="btn" data-a="20" data-c="5" data-bc="4">105學測 (兩解模糊)</button>
+                    <button class="btn" data-a="120" data-c="3" data-bc="5">鈍角 (唯一解)</button>
+                    <button class="btn" data-a="120" data-c="5" data-bc="3">鈍角 (無解)</button>
+                    <button class="btn" data-a="30" data-c="6" data-bc="3">銳角相切 (一解/RHS)</button>
+                    <button class="btn" data-a="40" data-c="5" data-bc="5">等腰 (一正根一零根)</button>
+                    <button class="btn" data-a="40" data-c="5" data-bc="7">大邊 (一正根一負根)</button>
+                </div>
+            </div>
+
+            <div class="teacher-tip">
+                💡 <strong>李向宇老師的破解心法 (呼應文章核心)：</strong><br>
+                1. <strong>代數與幾何的靈魂伴侶</strong>：由餘弦定理 $a^2 = c^2 + x^2 - 2cx \cos A$ 整理出的二次方程，其<strong>「正根」的個數</strong>，完美對應幾何圖形上<strong>「射線正向」的交點個數</strong>！<br>
+                2. <strong>負根與零根的幾何意義</strong>：當方程出現負根，代表交點落在 $A$ 點的「左側」（反向延長線上），不構成三角形；當出現零根，代表交點就是 $A$ 點本身（退化）。<br>
+                3. <strong>110學測第10題的陷阱</strong>：當 $\angle A$ 為鈍角或直角時，SSA 必定唯一解（前提是 $a>c$）；但當 $\angle A$ 為銳角時，必須嚴格比較 $a$ 與 $c$ 以及高 $h$ 的大小，才能避開模糊情形！
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="panel">
+                <h3>🎛️ 參數控制 (已知 $\angle A$, 邊 $c$, 邊 $a$)</h3>
+                <div class="slider-row">
+                    <label>$\angle A$</label>
+                    <input type="range" id="slider-A" min="10" max="170" step="1" value="20">
+                    <span class="val" id="val-A">20°</span>
+                </div>
+                <div class="slider-row">
+                    <label style="color:var(--c-color);">邊 $c$ (AB)</label>
+                    <input type="range" id="slider-c" min="1" max="10" step="0.1" value="5">
+                    <span class="val" id="val-c">5.0</span>
+                </div>
+                <div class="slider-row">
+                    <label style="color:var(--a-color);">邊 $a$ (BC)</label>
+                    <input type="range" id="slider-a" min="0.5" max="12" step="0.1" value="4">
+                    <span class="val" id="val-a">4.0</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>📊 代數驗證 (設 AC = $x$)</h3>
+                <div class="eq-box" id="eq-display">
+                    $x^2 - (10.0 \cos 20^\circ) x + (25 - 16) = 0$
+                </div>
+                
+                <div class="data-grid">
+                    <div class="data-item">
+                        <span class="math-label">判別式 $D = 4(a^2 - c^2 \sin^2 A)$</span>
+                        <strong id="disp-D">7.34</strong>
+                    </div>
+                    <div class="data-item" id="row-x1">
+                        <span class="math-label">根 $x_1$ (對應 $C_1$)</span>
+                        <strong id="disp-x1">+2.55</strong>
+                    </div>
+                    <div class="data-item" id="row-x2">
+                        <span class="math-label">根 $x_2$ (對應 $C_2$)</span>
+                        <strong id="disp-x2">+7.84</strong>
+                    </div>
+                </div>
+                
+                <div class="result-box res-2" id="result-box">
+                    ⚠️ 兩解 (SSA 模糊情形)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('geoCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const originX = 80, originY = 300;
+    const scale = 35; 
+
+    let state = { A_deg: 20, c: 5, a: 4 };
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        ctx.save();
+
+        const A_rad = state.A_deg * Math.PI / 180;
+        const c = state.c;
+        const a = state.a;
+        const h = c * Math.sin(A_rad);
+
+        // 1. 射線 AX
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(originX, originY); ctx.lineTo(W - 20, originY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(W - 20, originY); ctx.lineTo(W - 30, originY - 5); ctx.moveTo(W - 20, originY); ctx.lineTo(W - 30, originY + 5); ctx.stroke();
+
+        // 2. 角 A 弧線
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(originX, originY, 40, 0, -A_rad, true); ctx.stroke();
+        ctx.fillStyle = '#64748b'; ctx.font = 'bold 14px Arial'; ctx.fillText('A', originX + 45, originY - 10);
+
+        // 3. 點 B 與邊 c
+        const bx = originX + c * scale * Math.cos(A_rad);
+        const by = originY - c * scale * Math.sin(A_rad);
+        ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(originX, originY); ctx.lineTo(bx, by); ctx.stroke();
+        ctx.fillStyle = '#2563eb'; ctx.font = 'bold 16px Arial';
+        ctx.fillText('B', bx - 20, by - 10);
+        ctx.fillText(`c=${c.toFixed(1)}`, (originX + bx)/2 - 20, (originY + by)/2);
+
+        // 4. 高 h
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, originY); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(bx - 10, originY); ctx.lineTo(bx - 10, originY - 10); ctx.lineTo(bx, originY - 10); ctx.stroke();
+        ctx.fillStyle = '#ef4444'; ctx.font = 'bold 14px Arial'; ctx.fillText(`h=${h.toFixed(2)}`, bx + 5, (by + originY)/2);
+
+        // 5. 圓 B (半徑 a)
+        ctx.strokeStyle = '#f97316'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
+        ctx.beginPath(); ctx.arc(bx, by, a * scale, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+
+        // 6. 代數計算與交點
+        // x^2 - (2c cosA)x + (c^2 - a^2) = 0
+        const p = -2 * c * Math.cos(A_rad);
+        const q = c * c - a * a;
+        const D = p * p - 4 * q; // 等同 4(a^2 - h^2)
+        
+        let x1 = -1, x2 = -1;
+        let validSolutions = 0;
+
+        if (D >= 0) {
+            const sqrtD = Math.sqrt(D);
+            x1 = (-p - sqrtD) / 2;
+            x2 = (-p + sqrtD) / 2;
+            
+            // 繪製交點 C1, C2
+            drawIntersection(x1, '#10b981', 'C1');
+            drawIntersection(x2, '#8b5cf6', 'C2');
+        }
+
+        // 7. 原點 A
+        ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(originX, originY, 5, 0, Math.PI * 2); ctx.fill();
+
+        ctx.restore();
+        updateDashboard(p, q, D, x1, x2);
+    }
+
+    function drawIntersection(x_val, color, label) {
+        const cx = originX + x_val * scale;
+        const cy = originY;
+        
+        let isValid = x_val > 1e-4;
+        let isZero = Math.abs(x_val) <= 1e-4;
+
+        // 畫邊 a
+        ctx.strokeStyle = isValid ? color : '#cbd5e1'; 
+        ctx.lineWidth = isValid ? 4 : 2;
+        if (!isValid) ctx.setLineDash([4, 4]); else ctx.setLineDash([]);
+        
+        const bx = originX + state.c * scale * Math.cos(state.A_deg * Math.PI / 180);
+        const by = originY - state.c * scale * Math.sin(state.A_deg * Math.PI / 180);
+        
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(cx, cy); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 畫點
+        ctx.fillStyle = isValid ? color : '#94a3b8';
+        ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill();
+        
+        ctx.fillStyle = isValid ? color : '#94a3b8';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText(label, cx - 10, cy + 25);
+        ctx.fillText(`x=${x_val.toFixed(2)}`, (originX + cx)/2, cy + 20);
+        
+        if (!isValid) {
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(isZero ? '(零根, 退化)' : '(負根, 無效)', cx - 20, cy + 40);
+        }
+    }
+
+    function updateDashboard(p, q, D, x1, x2) {
+        document.getElementById('val-A').innerText = state.A_deg + '°';
+        document.getElementById('val-c').innerText = state.c.toFixed(1);
+        document.getElementById('val-a').innerText = state.a.toFixed(1);
+
+        // 更新方程式 (純 HTML 避免 MathJax 卡頓)
+        const p_val = -p; // 因為方程式是 - (2c cosA)x，所以這裡取 -p 顯示
+        document.getElementById('eq-display').innerHTML = `
+            <span class="var-x">$x^2$</span> $-$ <span class="var-x">${p_val.toFixed(2)} $x$</span> $+$ ${q.toFixed(2)} $= 0$
+        `;
+        MathJax.typesetPromise([document.getElementById('eq-display')]);
+
+        document.getElementById('disp-D').innerText = D.toFixed(2);
+
+        const row1 = document.getElementById('row-x1');
+        const row2 = document.getElementById('row-x2');
+        const val1 = document.getElementById('disp-x1');
+        const val2 = document.getElementById('disp-x2');
+
+        let validCount = 0;
+
+        if (D < -1e-6) {
+            val1.innerText = '無實根'; val2.innerText = '無實根';
+            row1.className = 'data-item val-neg'; row2.className = 'data-item val-neg';
+        } else {
+            // x1
+            if (x1 > 1e-4) { val1.innerText = `+${x1.toFixed(2)}`; row1.className = 'data-item val-pos'; validCount++; }
+            else if (Math.abs(x1) <= 1e-4) { val1.innerText = `0 (零根)`; row1.className = 'data-item val-zero'; }
+            else { val1.innerText = `${x1.toFixed(2)} (負根)`; row1.className = 'data-item val-neg'; }
+
+            // x2
+            if (x2 > 1e-4) { val2.innerText = `+${x2.toFixed(2)}`; row2.className = 'data-item val-pos'; validCount++; }
+            else if (Math.abs(x2) <= 1e-4) { val2.innerText = `0 (零根)`; row2.className = 'data-item val-zero'; }
+            else { val2.innerText = `${x2.toFixed(2)} (負根)`; row2.className = 'data-item val-neg'; }
+        }
+
+        const resBox = document.getElementById('result-box');
+        resBox.className = 'result-box';
+        if (validCount === 0) { resBox.classList.add('res-0'); resBox.innerText = '❌ 無解 (無正實根)'; }
+        else if (validCount === 1) { resBox.classList.add('res-1'); resBox.innerText = '✅ 唯一解 (僅一正實根)'; }
+        else { resBox.classList.add('res-2'); resBox.innerText = '⚠️ 兩解 (兩相異正實根 / 模糊情形)'; }
+    }
+
+    const sA = document.getElementById('slider-A');
+    const sc = document.getElementById('slider-c');
+    const sa = document.getElementById('slider-a');
+
+    function updateState() {
+        state.A_deg = parseFloat(sA.value);
+        state.c = parseFloat(sc.value);
+        state.a = parseFloat(sa.value);
+        draw();
+    }
+
+    sA.addEventListener('input', updateState);
+    sc.addEventListener('input', updateState);
+    sa.addEventListener('input', updateState);
+
+    document.querySelectorAll('#preset-btns .btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const target = e.currentTarget;
+            sA.value = target.dataset.a;
+            sc.value = target.dataset.c;
+            sa.value = target.dataset.bc;
+            updateState();
+        });
+    });
+
+    updateState();
+</script>
+<!-- 學習護照通關按鈕 -->
+<button id="passport-stamp" style="position:fixed; bottom:20px; right:20px; padding:15px 25px; background:#10b981; color:white; border:none; border-radius:50px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); z-index:9999; transition: all 0.2s;">
+  ✅ 我已理解，蓋章通關！
+</button>
+<script>
+  (function() {
+    const btn = document.getElementById('passport-stamp');
+    const moduleId = 'trig_m6'; // ⚠️ 請根據下方表格替換為 m1 ~ m7
+    
+    if(localStorage.getItem(moduleId) === 'true') {
+        btn.innerText = '🏆 已通關 (點擊返回首頁)';
+        btn.style.background = '#0891b2';
+    }
+    
+    btn.addEventListener('click', function() {
+        localStorage.setItem(moduleId, 'true');
+        this.innerText = '🎉 蓋章成功！返回護照...';
+        this.style.background = '#64748b';
+        this.disabled = true;
+        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+    });
+  })();
+</script>
+</body>
+</html>

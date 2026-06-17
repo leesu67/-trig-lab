@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角比大小比較天平 | 李向宇老師製作</title>
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5; --sin-color: #ef4444; --cos-color: #2563eb; 
+            --tan-color: #10b981; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0;
+        }
+        body { font-family: 'Noto Sans TC', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--card); border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--primary), #4338ca); color: white; padding: 24px; text-align: center; }
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 8px 0 0; opacity: 0.9; font-size: 14px; }
+
+        .main-content { padding: 24px; display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media (min-width: 1000px) { .main-content { grid-template-columns: 1.3fr 1fr; } }
+
+        .canvas-container { background: #fdfdfd; border: 2px dashed var(--border); border-radius: 12px; display: flex; justify-content: center; align-items: center; min-height: 500px; position: relative; }
+        canvas { max-width: 100%; touch-action: none; border-radius: 8px; cursor: crosshair; }
+
+        .dashboard { display: flex; flex-direction: column; gap: 20px; }
+        .panel { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .panel h3 { margin: 0 0 12px; font-size: 16px; color: var(--primary); border-bottom: 2px solid var(--primary); display: inline-block; padding-bottom: 4px; }
+
+        .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: white; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+        .slider-row label { font-weight: bold; min-width: 80px; font-size: 15px; }
+        .slider-row input { flex: 1; accent-color: var(--primary); }
+        .slider-row .val { font-family: monospace; font-weight: bold; color: var(--primary); min-width: 50px; text-align: right; font-size: 18px; }
+
+        .values-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .val-box { background: white; padding: 10px; border-radius: 8px; text-align: center; border-top: 4px solid var(--border); }
+        .val-box.sin { border-top-color: var(--sin-color); }
+        .val-box.cos { border-top-color: var(--cos-color); }
+        .val-box.tan { border-top-color: var(--tan-color); }
+        .val-box .label { font-size: 12px; color: #64748b; }
+        .val-box .num { font-size: 18px; font-weight: bold; font-family: monospace; }
+
+        /* 比較擂台 */
+        .vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .vs-card {
+            background: white; border: 2px solid var(--border); border-radius: 10px;
+            padding: 12px; text-align: center; transition: all 0.3s;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 80px;
+        }
+        .vs-card .eq { font-size: 16px; font-weight: bold; color: #475569; margin-bottom: 5px; }
+        .vs-card .result { font-size: 20px; font-weight: bold; padding: 4px 8px; border-radius: 6px; }
+        
+        .win-sin { background: #fee2e2; color: #991b1b; border-color: var(--sin-color); }
+        .win-cos { background: #dbeafe; color: #1e40af; border-color: var(--cos-color); }
+        .win-tan { background: #d1fae5; color: #065f46; border-color: var(--tan-color); }
+        .tie { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+
+        .teacher-tip { margin-top: 20px; padding: 16px; background: #eff6ff; border-left: 4px solid var(--primary); border-radius: 6px; font-size: 14px; color: #1e3a8a; line-height: 1.6; }
+        
+        .legend { display: flex; gap: 15px; font-size: 13px; color: #475569; margin-top: 10px; justify-content: center; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 12px; height: 4px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>⚖️ 三角比幾何線段與大小比較天平</h1>
+        <p>製作：李向宇老師 ｜ 單元 7：三角比 ｜ 銳角三角比的增減性與臨界點比較</p>
+    </header>
+
+    <div class="main-content">
+        <div class="canvas-panel">
+            <div class="canvas-container">
+                <canvas id="geoCanvas" width="600" height="600"></canvas>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item"><div class="dot" style="background:var(--cos-color)"></div> $\cos\theta$ (鄰邊)</div>
+                <div class="legend-item"><div class="dot" style="background:var(--sin-color)"></div> $\sin\theta$ (對邊)</div>
+                <div class="legend-item"><div class="dot" style="background:var(--tan-color)"></div> $\tan\theta$ (切線)</div>
+                <div class="legend-item"><div class="dot" style="background:#94a3b8; border: 1px dashed #64748b;"></div> $45^\circ$ 與 $60^\circ$ 參考線</div>
+            </div>
+
+            <div class="teacher-tip">
+                💡 <strong>李向宇老師的破解心法：</strong><br>
+                1. <strong>$45^\circ$ 是分水嶺</strong>：請拖曳滑桿，當角度跨過灰色的 $45^\circ$ 虛線時，你會親眼看到<strong>紅線 ($\sin$) 瞬間超越藍線 ($\cos$)</strong>！這就是為什麼 $\cos 70^\circ < \sin 70^\circ$。<br>
+                2. <strong>$\tan$ 的爆發力</strong>：綠線 ($\tan$) 是圓外的切線。當角度接近 $90^\circ$ 時，綠線會無限延長。注意看 $60^\circ$ 的參考點，當 $\theta > 60^\circ$ 時，$\tan\theta$ 就會大於 $\sqrt{3}$！<br>
+                3. <strong>幾何秒殺</strong>：在銳角範圍內，圓內的垂直線段 ($\sin$) <strong>永遠小於</strong>圓外的切線段 ($\tan$)，所以 $\sin\theta < \tan\theta$ 不證自明！
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="panel">
+                <h3>🎛️ 角度控制</h3>
+                <div class="slider-row">
+                    <label>銳角 $\theta$</label>
+                    <input type="range" id="slider-theta" min="1" max="89" step="1" value="30">
+                    <span class="val" id="val-theta">30°</span>
+                </div>
+                
+                <div class="values-grid">
+                    <div class="val-box sin">
+                        <div class="label">$\sin\theta$</div>
+                        <div class="num" id="disp-sin">0.500</div>
+                    </div>
+                    <div class="val-box cos">
+                        <div class="label">$\cos\theta$</div>
+                        <div class="num" id="disp-cos">0.866</div>
+                    </div>
+                    <div class="val-box tan">
+                        <div class="label">$\tan\theta$</div>
+                        <div class="num" id="disp-tan">0.577</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>⚔️ 大小比較擂台</h3>
+                <div class="vs-grid">
+                    <div class="vs-card" id="vs-sin-cos">
+                        <div class="eq">$\sin\theta$ vs $\cos\theta$</div>
+                        <div class="result" id="res-sin-cos">?</div>
+                    </div>
+                    <div class="vs-card" id="vs-tan-1">
+                        <div class="eq">$\tan\theta$ vs $1$</div>
+                        <div class="result" id="res-tan-1">?</div>
+                    </div>
+                    <div class="vs-card" id="vs-tan-root3">
+                        <div class="eq">$\tan\theta$ vs $\sqrt{3}$</div>
+                        <div class="result" id="res-tan-root3">?</div>
+                    </div>
+                    <div class="vs-card" id="vs-sin-tan">
+                        <div class="eq">$\sin\theta$ vs $\tan\theta$</div>
+                        <div class="result" id="res-sin-tan">?</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('geoCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const cx = W / 2 - 50; // 稍微偏左，留空間給 tan 線
+    const cy = H / 2 + 50; // 稍微偏下
+    const R = 200; // 單位圓半徑
+
+    let thetaDeg = 30;
+
+    function toX(x) { return cx + x * R; }
+    function toY(y) { return cy - y * R; }
+
+    function drawArrow(fromX, fromY, toX, toY, color, lineWidth = 4) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const rad = thetaDeg * Math.PI / 180;
+        const sinV = Math.sin(rad);
+        const cosV = Math.cos(rad);
+        const tanV = Math.tan(rad);
+
+        // 1. 坐標軸
+        ctx.save();
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(50, cy); ctx.lineTo(W - 20, cy); ctx.stroke(); // X
+        ctx.beginPath(); ctx.moveTo(cx, H - 50); ctx.lineTo(cx, 50); ctx.stroke(); // Y
+        ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px Arial';
+        ctx.fillText('x', W - 20, cy - 10); ctx.fillText('y', cx + 10, 50); ctx.fillText('O', cx - 20, cy + 20);
+        ctx.restore();
+
+        // 2. 單位圓
+        ctx.save();
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        // 3. 參考線 (45度 與 60度)
+        ctx.save();
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.5; ctx.setLineDash([8, 8]);
+        // 45度 (y=x)
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 250, cy - 250); ctx.stroke();
+        ctx.fillStyle = '#94a3b8'; ctx.font = '12px Arial'; ctx.fillText('45°', cx + 260, cy - 240);
+        
+        // 60度 (y=sqrt(3)x)
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 150, cy - 150 * Math.sqrt(3)); ctx.stroke();
+        ctx.fillText('60°', cx + 160, cy - 150 * Math.sqrt(3));
+        
+        // tan = sqrt(3) 的標記點 (在 x=1 的切線上)
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath(); ctx.arc(toX(1), toY(Math.sqrt(3)), 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillText('√3', toX(1) + 10, toY(Math.sqrt(3)));
+        ctx.restore();
+
+        // 4. 角度弧線
+        ctx.save();
+        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx, cy, 40, 0, -rad, true); ctx.stroke();
+        ctx.fillStyle = '#f59e0b'; ctx.font = 'bold 16px Arial';
+        ctx.fillText('θ', cx + 45, cy - 15);
+        ctx.restore();
+
+        // 5. 射線 (終邊)
+        ctx.save();
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(toX(cosV * 1.2), toY(sinV * 1.2)); ctx.stroke();
+        ctx.restore();
+
+        // 6. 三角比線段
+        // Cos (藍)
+        drawArrow(cx, cy, toX(cosV), cy, '#2563eb', 6);
+        // Sin (紅)
+        drawArrow(toX(cosV), cy, toX(cosV), toY(sinV), '#ef4444', 6);
+        
+        // Tan (綠) - 限制最大長度避免超出畫面
+        let tanDraw = Math.min(tanV, 2.5); 
+        if (tanV > 2.5) tanDraw = 2.5; // 截斷視覺
+        drawArrow(toX(1), cy, toX(1), toY(tanDraw), '#10b981', 6);
+        
+        // 連接原點到 tan 頂點的虛線 (輔助理解)
+        ctx.save();
+        ctx.strokeStyle = '#10b981'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(toX(1), toY(tanDraw)); ctx.stroke();
+        ctx.restore();
+
+        // 7. 端點與標籤
+        ctx.save();
+        ctx.fillStyle = '#1e293b'; ctx.font = 'bold 14px Arial';
+        // P點
+        ctx.beginPath(); ctx.arc(toX(cosV), toY(sinV), 5, 0, Math.PI*2); ctx.fill();
+        ctx.fillText(`P(${cosV.toFixed(2)}, ${sinV.toFixed(2)})`, toX(cosV) + 10, toY(sinV) - 10);
+        ctx.restore();
+    }
+
+    function updateDashboard() {
+        const rad = thetaDeg * Math.PI / 180;
+        const sinV = Math.sin(rad);
+        const cosV = Math.cos(rad);
+        const tanV = Math.tan(rad);
+
+        document.getElementById('val-theta').innerText = thetaDeg + '°';
+        document.getElementById('disp-sin').innerText = sinV.toFixed(3);
+        document.getElementById('disp-cos').innerText = cosV.toFixed(3);
+        document.getElementById('disp-tan').innerText = tanV.toFixed(3);
+
+        // 比較邏輯
+        updateVsCard('vs-sin-cos', 'res-sin-cos', sinV, cosV, 'sin', 'cos');
+        updateVsCard('vs-tan-1', 'res-tan-1', tanV, 1, 'tan', '1');
+        updateVsCard('vs-tan-root3', 'res-tan-root3', tanV, Math.sqrt(3), 'tan', '√3');
+        updateVsCard('vs-sin-tan', 'res-sin-tan', sinV, tanV, 'sin', 'tan');
+    }
+
+    function updateVsCard(cardId, resId, v1, v2, name1, name2) {
+        const card = document.getElementById(cardId);
+        const res = document.getElementById(resId);
+        card.className = 'vs-card';
+        
+        let diff = Math.abs(v1 - v2);
+        if (diff < 0.001) {
+            res.innerText = '=';
+            card.classList.add('tie');
+        } else if (v1 > v2) {
+            res.innerText = `${name1} > ${name2}`;
+            if (name1.includes('sin')) card.classList.add('win-sin');
+            else if (name1.includes('cos')) card.classList.add('win-cos');
+            else card.classList.add('win-tan');
+        } else {
+            res.innerText = `${name1} < ${name2}`;
+            if (name2.includes('sin')) card.classList.add('win-sin');
+            else if (name2.includes('cos')) card.classList.add('win-cos');
+            else card.classList.add('win-tan');
+        }
+    }
+
+    const slider = document.getElementById('slider-theta');
+    slider.addEventListener('input', (e) => {
+        thetaDeg = parseFloat(e.target.value);
+        draw();
+        updateDashboard();
+    });
+
+    // 支援滑鼠/觸控拖曳 Canvas 上的點
+    let isDragging = false;
+    function getAngle(evt) {
+        let rect = canvas.getBoundingClientRect();
+        let clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        let clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        let dx = clientX - rect.left - cx;
+        let dy = -(clientY - rect.top - cy);
+        let deg = Math.atan2(dy, dx) * 180 / Math.PI;
+        return Math.max(1, Math.min(89, Math.round(deg)));
+    }
+
+    canvas.addEventListener('mousedown', (e) => { isDragging = true; handleDrag(e); });
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDragging = true; handleDrag(e); });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('touchend', () => isDragging = false);
+    
+    canvas.addEventListener('mousemove', (e) => { if(isDragging) handleDrag(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(isDragging) handleDrag(e); });
+
+    function handleDrag(evt) {
+        thetaDeg = getAngle(evt);
+        slider.value = thetaDeg;
+        draw();
+        updateDashboard();
+    }
+
+    // 初始化
+    draw();
+    updateDashboard();
+    MathJax.typesetPromise();
+</script>
+<!-- 學習護照通關按鈕 -->
+<button id="passport-stamp" style="position:fixed; bottom:20px; right:20px; padding:15px 25px; background:#10b981; color:white; border:none; border-radius:50px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); z-index:9999; transition: all 0.2s;">
+  ✅ 我已理解，蓋章通關！
+</button>
+<script>
+  (function() {
+    const btn = document.getElementById('passport-stamp');
+    const moduleId = 'trig_m3'; // ⚠️ 請根據下方表格替換為 m1 ~ m7
+    
+    if(localStorage.getItem(moduleId) === 'true') {
+        btn.innerText = '🏆 已通關 (點擊返回首頁)';
+        btn.style.background = '#0891b2';
+    }
+    
+    btn.addEventListener('click', function() {
+        localStorage.setItem(moduleId, 'true');
+        this.innerText = '🎉 蓋章成功！返回護照...';
+        this.style.background = '#64748b';
+        this.disabled = true;
+        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極坐標雷達掃描儀 | 李向宇老師製作</title>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg: #0f172a; /* 雷達深色背景 */
+            --card: #1e293b;
+            --text: #f8fafc;
+            --primary: #10b981; /* 螢光綠 */
+            --secondary: #0ea5e9; /* 螢光藍 */
+            --accent: #f59e0b; /* 螢光橘 */
+            --grid: #334155;
+            --border: #475569;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        header {
+            background: linear-gradient(135deg, #064e3b, #0f172a);
+            color: var(--primary);
+            padding: 24px;
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        header h1 { margin: 0; font-size: 24px; letter-spacing: 2px; text-shadow: 0 0 10px var(--primary); }
+        header p { margin: 8px 0 0; opacity: 0.8; font-size: 14px; color: #94a3b8; }
+
+        .main-content {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 900px) {
+            .main-content { grid-template-columns: 1.2fr 1fr; }
+        }
+
+        .radar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .canvas-container {
+            background: #020617;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(16, 185, 129, 0.1);
+        }
+
+        canvas { 
+            max-width: 100%; 
+            cursor: crosshair; 
+            touch-action: none; 
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            background: transparent;
+            color: var(--primary);
+        }
+        .btn:hover { background: rgba(16, 185, 129, 0.2); box-shadow: 0 0 10px var(--primary); }
+        .btn-active { background: var(--primary); color: #020617; }
+
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .panel h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: var(--secondary);
+            border-bottom: 1px solid var(--border);
+            display: inline-block;
+            padding-bottom: 4px;
+        }
+
+        .slider-container { margin-bottom: 16px; }
+        .slider-label { 
+            display: flex; 
+            justify-content: space-between; 
+            font-weight: bold; 
+            font-size: 14px; 
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+        .slider-label span:last-child { color: var(--primary); font-family: monospace; font-size: 16px;}
+        
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .coord-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .coord-box {
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .coord-box .label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .coord-box .value { font-size: 20px; font-weight: bold; font-family: monospace; }
+        .val-r { color: var(--primary); }
+        .val-theta { color: var(--accent); }
+        .val-x { color: var(--secondary); }
+        .val-y { color: #ec4899; }
+
+        .formula-box {
+            background: #020617;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed var(--primary);
+            font-size: 15px;
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .teacher-tip {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--accent);
+            border-radius: 6px;
+            font-size: 14px;
+            color: #fde68a;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📡 極坐標雷達掃描儀</h1>
+        <p>製作：李向宇老師 ｜ 單元 9：三角比 ｜ 極坐標與直角坐標轉換</p>
+    </header>
+
+    <div class="main-content">
+        <div class="radar-section">
+            <div class="canvas-container">
+                <canvas id="radarCanvas" width="500" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button class="btn" id="btn-circle" onclick="toggleTrace('circle')">⭕ 顯示軌跡: 圓 $r=4$</button>
+                <button class="btn" id="btn-line" onclick="toggleTrace('line')">📏 顯示軌跡: 射線 $\theta=60^\circ$</button>
+                <button class="btn" onclick="clearTrace()">🗑️ 清除軌跡</button>
+            </div>
+            <div class="teacher-tip">
+                💡 <strong>老師叮嚀：</strong><br>
+                1. <strong>極坐標 $[r, \theta]$</strong>：$r$ 是「距離」，$\theta$ 是「方向」。試著拖曳雷達上的紅點，觀察當 $r$ 不變，只改變 $\theta$ 時，點會畫出一個圓！<br>
+                2. <strong>轉換秘訣</strong>：不要死背公式！看著雷達上的直角三角形，$x$ 就是鄰邊 ($r \cos\theta$)，$y$ 就是對邊 ($r \sin\theta$)。<br>
+                3. <strong>注意</strong>：極坐標表示法不唯一（同界角），且極點 (原點) 的 $r=0$，$\theta$ 可以是任意角喔！
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="panel">
+                <h3>🎛️ 雷達控制面板</h3>
+                <div class="slider-container">
+                    <div class="slider-label"><span>半徑 $r$ (距離)</span><span id="val-r">4.0</span></div>
+                    <input type="range" id="slider-r" min="0" max="10" step="0.1" value="4">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label"><span>極角 $\theta$ (方向)</span><span id="val-theta">45°</span></div>
+                    <input type="range" id="slider-theta" min="0" max="360" step="1" value="45">
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>📊 坐標數據轉換</h3>
+                <div class="coord-grid">
+                    <div class="coord-box">
+                        <div class="label">極坐標 $r$</div>
+                        <div class="value val-r" id="disp-r">4.0</div>
+                    </div>
+                    <div class="coord-box">
+                        <div class="label">極角 $\theta$</div>
+                        <div class="value val-theta" id="disp-theta">45°</div>
+                    </div>
+                    <div class="coord-box">
+                        <div class="label">直角 $x$</div>
+                        <div class="value val-x" id="disp-x">2.83</div>
+                    </div>
+                    <div class="coord-box">
+                        <div class="label">直角 $y$</div>
+                        <div class="value val-y" id="disp-y">2.83</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>📐 轉換公式驗證</h3>
+                <div class="formula-box">
+                    $x = r \cos\theta = <span id="calc-x">4 \times \frac{\sqrt{2}}{2}</span> = <span class="val-x" id="res-x">2.83</span>$<br>
+                    $y = r \sin\theta = <span id="calc-y">4 \times \frac{\sqrt{2}}{2}</span> = <span class="val-y" id="res-y">2.83</span>$
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+    const sliderR = document.getElementById('slider-r');
+    const sliderTheta = document.getElementById('slider-theta');
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const cx = W / 2;
+    const cy = H / 2;
+    const scale = 20; // 1 單位 = 20 像素 (最大 r=10 對應 200px)
+
+    let state = { r: 4, theta: 45 };
+    let isDragging = false;
+    let traceMode = null; // 'circle', 'line', null
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, W, H);
+        
+        // 同心圓
+        for (let i = 1; i <= 10; i++) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, i * scale, 0, Math.PI * 2);
+            ctx.strokeStyle = i % 2 === 0 ? '#334155' : '#1e293b';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            if (i % 2 === 0) {
+                ctx.fillStyle = '#64748b';
+                ctx.font = '12px monospace';
+                ctx.fillText(i, cx + i * scale + 5, cy - 5);
+            }
+        }
+
+        // 放射線與角度標籤
+        for (let i = 0; i < 12; i++) {
+            let angle = i * 30 * Math.PI / 180;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + 220 * Math.cos(angle), cy - 220 * Math.sin(angle));
+            ctx.strokeStyle = '#1e293b';
+            ctx.stroke();
+            
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let lx = cx + 235 * Math.cos(angle);
+            let ly = cy - 235 * Math.sin(angle);
+            ctx.fillText(`${i * 30}°`, lx, ly);
+        }
+        ctx.textAlign = 'start';
+        ctx.textBaseline = 'alphabetic';
+
+        // 直角坐標軸 (X, Y)
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, cy); ctx.lineTo(W, cy);
+        ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('x', W - 20, cy - 10);
+        ctx.fillText('y', cx + 10, 20);
+    }
+
+    function drawTraces() {
+        if (traceMode === 'circle') {
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4 * scale, 0, Math.PI * 2);
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        } else if (traceMode === 'line') {
+            let angle = 60 * Math.PI / 180;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + 250 * Math.cos(angle), cy - 250 * Math.sin(angle));
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
+
+    function drawPoint() {
+        let r = state.r;
+        let thetaDeg = state.theta;
+        let theta = thetaDeg * Math.PI / 180;
+
+        let px = cx + r * scale * Math.cos(theta);
+        let py = cy - r * scale * Math.sin(theta); // Canvas Y 向下
+
+        // 掃描扇形
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r * scale, 0, -theta, true);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.1)';
+        ctx.fill();
+
+        // 射線 (r)
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(px, py);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // 投影線 (x, y)
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 2;
+        
+        // X 投影
+        ctx.strokeStyle = '#0ea5e9';
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, cy);
+        ctx.stroke();
+
+        // Y 投影
+        ctx.strokeStyle = '#ec4899';
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(cx, py);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 角度弧線
+        ctx.beginPath();
+        ctx.arc(cx, cy, 30, 0, -theta, true);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 點
+        ctx.beginPath();
+        ctx.arc(px, py, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // 坐標標籤
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText(`[${r.toFixed(1)}, ${thetaDeg.toFixed(0)}°]`, px + 15, py - 15);
+    }
+
+    function update() {
+        state.r = parseFloat(sliderR.value);
+        state.theta = parseFloat(sliderTheta.value);
+
+        let thetaRad = state.theta * Math.PI / 180;
+        let x = state.r * Math.cos(thetaRad);
+        let y = state.r * Math.sin(thetaRad);
+
+        // 更新 UI
+        document.getElementById('val-r').innerText = state.r.toFixed(1);
+        document.getElementById('val-theta').innerText = state.theta.toFixed(0) + '°';
+        
+        document.getElementById('disp-r').innerText = state.r.toFixed(1);
+        document.getElementById('disp-theta').innerText = state.theta.toFixed(0) + '°';
+        document.getElementById('disp-x').innerText = x.toFixed(2);
+        document.getElementById('disp-y').innerText = y.toFixed(2);
+
+        // 更新公式區
+        document.getElementById('calc-x').innerText = `${state.r.toFixed(1)} \\times \\cos(${state.theta.toFixed(0)}^\\circ)`;
+        document.getElementById('calc-y').innerText = `${state.r.toFixed(1)} \\times \\sin(${state.theta.toFixed(0)}^\\circ)`;
+        document.getElementById('res-x').innerText = x.toFixed(2);
+        document.getElementById('res-y').innerText = y.toFixed(2);
+        MathJax.typesetPromise();
+
+        drawGrid();
+        drawTraces();
+        drawPoint();
+    }
+
+    sliderR.addEventListener('input', update);
+    sliderTheta.addEventListener('input', update);
+
+    // 拖曳邏輯
+    function getMousePos(evt) {
+        let rect = canvas.getBoundingClientRect();
+        let clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        let clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        return {
+            x: clientX - rect.left - cx,
+            y: -(clientY - rect.top - cy) // 翻轉 Y 軸
+        };
+    }
+
+    canvas.addEventListener('mousedown', () => isDragging = true);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDragging = true; handleDrag(e); });
+    
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('touchend', () => isDragging = false);
+
+    canvas.addEventListener('mousemove', (e) => { if(isDragging) handleDrag(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(isDragging) handleDrag(e); });
+
+    function handleDrag(evt) {
+        let pos = getMousePos(evt);
+        let r = Math.hypot(pos.x, pos.y) / scale;
+        let theta = Math.atan2(pos.y, pos.x) * 180 / Math.PI;
+        if (theta < 0) theta += 360;
+
+        r = Math.max(0, Math.min(10, r));
+        
+        sliderR.value = r.toFixed(1);
+        sliderTheta.value = theta.toFixed(0);
+        update();
+    }
+
+    function toggleTrace(mode) {
+        if (traceMode === mode) {
+            traceMode = null;
+            document.getElementById(`btn-${mode}`).classList.remove('btn-active');
+        } else {
+            traceMode = mode;
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('btn-active'));
+            document.getElementById(`btn-${mode}`).classList.add('btn-active');
+        }
+        update();
+    }
+
+    function clearTrace() {
+        traceMode = null;
+        document.querySelectorAll('.btn').forEach(b => b.classList.remove('btn-active'));
+        update();
+    }
+
+    // 初始化
+    update();
+</script>
+<!-- 學習護照通關按鈕 -->
+<button id="passport-stamp" style="position:fixed; bottom:20px; right:20px; padding:15px 25px; background:#10b981; color:white; border:none; border-radius:50px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); z-index:9999; transition: all 0.2s;">
+  ✅ 我已理解，蓋章通關！
+</button>
+<script>
+  (function() {
+    const btn = document.getElementById('passport-stamp');
+    const moduleId = 'trig_m4'; // ⚠️ 請根據下方表格替換為 m1 ~ m7
+    
+    if(localStorage.getItem(moduleId) === 'true') {
+        btn.innerText = '🏆 已通關 (點擊返回首頁)';
+        btn.style.background = '#0891b2';
+    }
+    
+    btn.addEventListener('click', function() {
+        localStorage.setItem(moduleId, 'true');
+        this.innerText = '🎉 蓋章成功！返回護照...';
+        this.style.background = '#64748b';
+        this.disabled = true;
+        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>素養情境解謎室 (水車與影子篇) | 李向宇老師製作</title>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #0284c7; /* 天空藍 */
+            --accent: #f59e0b;  /* 陽光橘 */
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #0369a1);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 8px 0 0; opacity: 0.9; font-size: 14px; }
+
+        .tabs {
+            display: flex;
+            background: #f1f5f9;
+            border-bottom: 2px solid var(--border);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-weight: bold;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            background: white;
+            border-bottom-color: var(--primary);
+        }
+
+        .main-content {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 900px) {
+            .main-content { grid-template-columns: 1.2fr 1fr; }
+        }
+
+        .canvas-panel {
+            background: #fdfdfd;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        canvas {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .controls {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .slider-row label { font-weight: bold; min-width: 120px; font-size: 14px; }
+        .slider-row input { flex: 1; accent-color: var(--primary); }
+        .slider-row .val { font-family: monospace; font-weight: bold; color: var(--primary); min-width: 60px; text-align: right; }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .data-box {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .data-box .label { font-size: 12px; color: #64748b; }
+        .data-box .value { font-size: 18px; font-weight: bold; color: var(--text); }
+        .val-highlight { color: var(--accent); }
+        .val-success { color: var(--success); }
+        .val-danger { color: var(--danger); }
+
+        .puzzle-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .card h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            display: inline-block;
+            padding-bottom: 4px;
+        }
+
+        .hint-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 14px;
+            color: #92400e;
+            margin-top: 10px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .hint-box.show { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .btn-hint { background: var(--accent); color: white; }
+        .btn-hint:hover { background: #d97706; }
+        
+        .ans-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .ans-row input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .ans-row input:focus { outline: none; border-color: var(--primary); }
+        .btn-submit { background: var(--primary); color: white; }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        .feedback.correct { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; display: block; }
+        .feedback.wrong { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; display: block; }
+
+        .teacher-tip {
+            margin-top: 20px;
+            padding: 16px;
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1e3a8a;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🧩 素養情境解謎室 (水車與影子篇)</h1>
+        <p>製作：李向宇老師 ｜ 單元 9：三角比 ｜ 數學建模與臨界點分析</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('water')">⚙️ 情境一：水車連動問題</button>
+        <button class="tab-btn" onclick="switchTab('shadow')">☀️ 情境二：乘涼危機</button>
+    </div>
+
+    <div class="main-content">
+        <!-- 左側：動畫與控制 -->
+        <div class="canvas-panel">
+            <!-- 水車情境 -->
+            <div id="scene-water">
+                <canvas id="canvasWater" width="600" height="300"></canvas>
+                <div class="controls">
+                    <div class="slider-row">
+                        <label>水車旋轉角 $\theta$</label>
+                        <input type="range" id="slider-theta" min="0" max="360" step="1" value="0">
+                        <span class="val" id="val-theta">0°</span>
+                    </div>
+                    <div class="data-grid">
+                        <div class="data-box">
+                            <div class="label">当前 $OB$ 距離</div>
+                            <div class="value" id="disp-ob">10.0</div>
+                        </div>
+                        <div class="data-box">
+                            <div class="label">極值狀態</div>
+                            <div class="value val-highlight" id="disp-state">一般</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 影子情境 -->
+            <div id="scene-shadow" style="display:none;">
+                <canvas id="canvasShadow" width="600" height="300"></canvas>
+                <div class="controls">
+                    <div class="slider-row">
+                        <label>小明距離建築物 $d$</label>
+                        <input type="range" id="slider-d" min="0" max="800" step="10" value="100">
+                        <span class="val" id="val-d">100 cm</span>
+                    </div>
+                    <div class="data-grid">
+                        <div class="data-box">
+                            <div class="label">建築物影長</div>
+                            <div class="value">800 cm</div>
+                        </div>
+                        <div class="data-box">
+                            <div class="label">小明狀態</div>
+                            <div class="value val-success" id="disp-shadow-state">安全乘涼中</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：解謎與提示 -->
+        <div class="puzzle-panel">
+            <!-- 水車解謎 -->
+            <div id="puzzle-water" class="card">
+                <h3>⚙️ 任務：找出 B 點的移動極限</h3>
+                <p style="font-size:14px; color:#475569;">水車半徑 $r=3$，木桿長 $L=7$。當水車轉動時，B 點會在水平槽內滑動。請找出 B 點離軸心 O 的<strong>最遠距離 $m$</strong> 與<strong>最近距離 $n$</strong>。</p>
+                
+                <button class="btn btn-hint" onclick="showHint('w1')">💡 提示 1：最遠距離</button>
+                <div class="hint-box" id="hint-w1">試著將滑桿拉到 <strong>0°</strong> 或 <strong>360°</strong>。當 A 點轉到 O 點的右側水平線上時，O、A、B 三點會形成什麼樣的幾何關係？此時 $OB$ 的長度怎麼算最快？</div>
+
+                <button class="btn btn-hint" onclick="showHint('w2')">💡 提示 2：最近距離</button>
+                <div class="hint-box" id="hint-w2">試著將滑桿拉到 <strong>180°</strong>。當 A 點轉到 O 點的左側水平線上時，A 點會「縮進」O 與 B 之間。此時 $OB$ 的長度等於木桿長減去什麼？</div>
+
+                <div class="ans-row">
+                    <input type="text" id="ans-water" placeholder="輸入數對 (m, n) 例如: (10, 4)">
+                    <button class="btn btn-submit" onclick="checkAns('water')">確認</button>
+                </div>
+                <div class="feedback" id="fb-water"></div>
+            </div>
+
+            <!-- 影子解謎 -->
+            <div id="puzzle-shadow" class="card" style="display:none;">
+                <h3>☀️ 任務：小明的乘涼極限</h3>
+                <p style="font-size:14px; color:#475569;">建築物高 $600$ cm，小明高 $180$ cm。陽光仰角 $\theta$ 滿足 $\sin\theta = \frac{3}{5}$。請問小明在完全不被曬到的條件下，<strong>最遠可以離建築物底部多少公分？</strong></p>
+                
+                <button class="btn btn-hint" onclick="showHint('s1')">💡 提示 1：太陽的斜率</button>
+                <div class="hint-box" id="hint-s1">已知 $\sin\theta = \frac{3}{5}$，請畫出直角三角形，求出 $\tan\theta$ 的值。$\tan\theta$ 代表了「高度」與「影長」的比例關係喔！</div>
+
+                <button class="btn btn-hint" onclick="showHint('s2')">💡 提示 2：影長大作戰</button>
+                <div class="hint-box" id="hint-s2">利用 $\tan\theta = \frac{3}{4}$，分別算出「建築物的影子總長」以及「小明自己的影子長度」。</div>
+
+                <button class="btn btn-hint" onclick="showHint('s3')">💡 提示 3：臨界點分析</button>
+                <div class="hint-box" id="hint-s3">拉動上方的滑桿！你會發現，當小明的「影子前端」剛好碰到「建築物的影子前端」時，就是小明能站的最遠極限。試著列出不等式：$d + \text{小明影長} \le \text{建築物影長}$。</div>
+
+                <div class="ans-row">
+                    <input type="text" id="ans-shadow" placeholder="輸入最遠距離 (cm)">
+                    <button class="btn btn-submit" onclick="checkAns('shadow')">確認</button>
+                </div>
+                <div class="feedback" id="fb-shadow"></div>
+            </div>
+
+            <div class="teacher-tip">
+                💡 <strong>李向宇老師的素養解題心法：</strong><br>
+                面對學測素養題，千萬不要急著代公式！<br>
+                1. <strong>畫圖建模</strong>：把文字轉化為幾何圖形（如：水車轉化為圓與線段，影子轉化為相似三角形）。<br>
+                2. <strong>尋找臨界點</strong>：極值通常發生在「特殊的幾何位置」（例如：三點共線、影子端點重合）。<br>
+                3. <strong>動態想像</strong>：在腦海中（或用本教具）讓圖形動起來，觀察變數之間的連動關係，答案自然浮現！
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab 切換邏輯
+    function switchTab(scene) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if (scene === 'water') {
+            document.getElementById('scene-water').style.display = 'block';
+            document.getElementById('scene-shadow').style.display = 'none';
+            document.getElementById('puzzle-water').style.display = 'block';
+            document.getElementById('puzzle-shadow').style.display = 'none';
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            drawWater();
+        } else {
+            document.getElementById('scene-water').style.display = 'none';
+            document.getElementById('scene-shadow').style.display = 'block';
+            document.getElementById('puzzle-water').style.display = 'none';
+            document.getElementById('puzzle-shadow').style.display = 'block';
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            drawShadow();
+        }
+    }
+
+    // 提示展開邏輯
+    function showHint(id) {
+        document.getElementById(`hint-${id}`).classList.toggle('show');
+    }
+
+    // ================= 情境一：水車 =================
+    const cW = document.getElementById('canvasWater');
+    const ctxW = cW.getContext('2d');
+    const sliderTheta = document.getElementById('slider-theta');
+
+    function drawWater() {
+        ctxW.clearRect(0, 0, cW.width, cW.height);
+        const theta = parseFloat(sliderTheta.value) * Math.PI / 180;
+        
+        // 參數設定 (比例尺: 1 單位 = 20 px)
+        const scale = 20;
+        const O = {x: 120, y: 150};
+        const r = 3 * scale; // 60
+        const L = 7 * scale; // 140
+
+        // 1. 水平槽
+        ctxW.beginPath();
+        ctxW.moveTo(0, O.y);
+        ctxW.lineTo(cW.width, O.y);
+        ctxW.strokeStyle = '#94a3b8';
+        ctxW.lineWidth = 4;
+        ctxW.stroke();
+
+        // 2. 水車圓
+        ctxW.beginPath();
+        ctxW.arc(O.x, O.y, r, 0, Math.PI * 2);
+        ctxW.strokeStyle = '#cbd5e1';
+        ctxW.lineWidth = 2;
+        ctxW.setLineDash([5, 5]);
+        ctxW.stroke();
+        ctxW.setLineDash([]);
+
+        // 3. 點 A 座標
+        const A = {
+            x: O.x + r * Math.cos(theta),
+            y: O.y - r * Math.sin(theta) // Canvas Y 向下
+        };
+
+        // 4. 點 B 座標 (B 在水平槽上，AB = L)
+        // (B.x - A.x)^2 + (O.y - A.y)^2 = L^2
+        const dy = O.y - A.y;
+        const dx = Math.sqrt(L * L - dy * dy);
+        const B = {x: A.x + dx, y: O.y};
+
+        // 5. 繪製連桿
+        ctxW.beginPath();
+        ctxW.moveTo(O.x, O.y);
+        ctxW.lineTo(A.x, A.y);
+        ctxW.strokeStyle = '#f59e0b'; // OA 桿
+        ctxW.lineWidth = 6;
+        ctxW.stroke();
+
+        ctxW.beginPath();
+        ctxW.moveTo(A.x, A.y);
+        ctxW.lineTo(B.x, B.y);
+        ctxW.strokeStyle = '#0284c7'; // AB 桿
+        ctxW.lineWidth = 6;
+        ctxW.stroke();
+
+        // 6. 繪製節點
+        drawNode(O.x, O.y, '#1e293b', 'O');
+        drawNode(A.x, A.y, '#ef4444', 'A');
+        drawNode(B.x, B.y, '#10b981', 'B');
+
+        // 7. 更新數據
+        const obDist = (B.x - O.x) / scale;
+        document.getElementById('disp-ob').innerText = obDist.toFixed(2);
+        
+        let state = '一般';
+        if (Math.abs(obDist - 10) < 0.1) state = '最遠 (m=10)';
+        else if (Math.abs(obDist - 4) < 0.1) state = '最近 (n=4)';
+        
+        const stateEl = document.getElementById('disp-state');
+        stateEl.innerText = state;
+        stateEl.className = 'value ' + (state === '一般' ? 'val-highlight' : 'val-success');
+    }
+
+    function drawNode(x, y, color, label) {
+        ctxW.beginPath();
+        ctxW.arc(x, y, 8, 0, Math.PI * 2);
+        ctxW.fillStyle = color;
+        ctxW.fill();
+        ctxW.fillStyle = '#1e293b';
+        ctxW.font = 'bold 16px Arial';
+        ctxW.fillText(label, x + 10, y - 10);
+    }
+
+    sliderTheta.addEventListener('input', () => {
+        document.getElementById('val-theta').innerText = sliderTheta.value + '°';
+        drawWater();
+    });
+
+
+    // ================= 情境二：影子 =================
+    const cS = document.getElementById('canvasShadow');
+    const ctxS = cS.getContext('2d');
+    const sliderD = document.getElementById('slider-d');
+
+    function drawShadow() {
+        ctxS.clearRect(0, 0, cS.width, cS.height);
+        const d = parseFloat(sliderD.value); // 實際距離 cm
+        
+        // 比例尺: 5 cm = 1 px
+        const scale = 5; 
+        const groundY = 250;
+        const buildingX = 50;
+        const buildingH = 600 / scale; // 120 px
+        const mingH = 180 / scale; // 36 px
+        
+        // 太陽仰角 tan(theta) = 3/4
+        // 光線斜率 (在 Canvas 中 dx>0, dy>0) => dy/dx = 3/4 => dx = dy * 4/3
+        
+        // 1. 地面
+        ctxS.beginPath();
+        ctxS.moveTo(0, groundY);
+        ctxS.lineTo(cS.width, groundY);
+        ctxS.strokeStyle = '#64748b';
+        ctxS.lineWidth = 4;
+        ctxS.stroke();
+
+        // 2. 建築物
+        ctxS.fillStyle = '#94a3b8';
+        ctxS.fillRect(buildingX, groundY - buildingH, 20, buildingH);
+        
+        // 建築物影子
+        const buildingShadowLen = buildingH * (4/3); // 160 px
+        const buildingShadowEndX = buildingX + 20 + buildingShadowLen;
+        
+        ctxS.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctxS.fillRect(buildingX + 20, groundY, buildingShadowLen, 5);
+
+        // 太陽光線 (建築物)
+        ctxS.beginPath();
+        ctxS.moveTo(buildingX + 20, groundY - buildingH);
+        ctxS.lineTo(buildingShadowEndX, groundY);
+        ctxS.strokeStyle = '#f59e0b';
+        ctxS.lineWidth = 2;
+        ctxS.setLineDash([5, 5]);
+        ctxS.stroke();
+        ctxS.setLineDash([]);
+
+        // 3. 小明
+        const mingX = buildingX + 20 + (d / scale);
+        const mingShadowLen = mingH * (4/3); // 48 px
+        const mingShadowEndX = mingX + mingShadowLen;
+
+        // 小明本體
+        ctxS.fillStyle = '#0284c7';
+        ctxS.fillRect(mingX - 5, groundY - mingH, 10, mingH);
+        ctxS.beginPath();
+        ctxS.arc(mingX, groundY - mingH - 8, 8, 0, Math.PI * 2);
+        ctxS.fill();
+
+        // 小明影子
+        ctxS.fillStyle = 'rgba(2, 132, 199, 0.4)';
+        ctxS.fillRect(mingX, groundY, mingShadowLen, 5);
+
+        // 太陽光線 (小明)
+        ctxS.beginPath();
+        ctxS.moveTo(mingX, groundY - mingH);
+        ctxS.lineTo(mingShadowEndX, groundY);
+        ctxS.strokeStyle = '#ef4444';
+        ctxS.lineWidth = 2;
+        ctxS.setLineDash([3, 3]);
+        ctxS.stroke();
+        ctxS.setLineDash([]);
+
+        // 4. 狀態判斷
+        const isSafe = mingShadowEndX <= buildingShadowEndX;
+        const stateEl = document.getElementById('disp-shadow-state');
+        
+        if (isSafe) {
+            stateEl.innerText = '😎 安全乘涼中';
+            stateEl.className = 'value val-success';
+        } else {
+            stateEl.innerText = '🥵 被曬到了！';
+            stateEl.className = 'value val-danger';
+        }
+        
+        // 標示臨界點
+        if (Math.abs(mingShadowEndX - buildingShadowEndX) < 5) {
+            ctxS.fillStyle = '#ef4444';
+            ctxS.font = 'bold 16px Arial';
+            ctxS.fillText('⚠️ 臨界點！', buildingShadowEndX - 40, groundY - 20);
+        }
+    }
+
+    sliderD.addEventListener('input', () => {
+        document.getElementById('val-d').innerText = sliderD.value + ' cm';
+        drawShadow();
+    });
+
+    // ================= 答案驗證 =================
+    function checkAns(type) {
+        let userAns = '';
+        let fbEl = '';
+        let correct = false;
+
+        if (type === 'water') {
+            userAns = document.getElementById('ans-water').value.replace(/\s/g, '');
+            fbEl = document.getElementById('fb-water');
+            // 接受 (10,4) 或 10,4 等
+            if (userAns.includes('10') && userAns.includes('4')) correct = true;
+        } else {
+            userAns = document.getElementById('ans-shadow').value.replace(/\s/g, '');
+            fbEl = document.getElementById('fb-shadow');
+            if (userAns === '560') correct = true;
+        }
+
+        fbEl.style.display = 'block';
+        if (correct) {
+            fbEl.className = 'feedback correct';
+            fbEl.innerHTML = '🎉 <strong>完全正確！</strong> 你已經掌握了極值與臨界點的物理意義！';
+        } else {
+            fbEl.className = 'feedback wrong';
+            fbEl.innerHTML = '❌ <strong>再試試看！</strong> 請拉動左側滑桿，觀察數據變化與圖形的特殊位置。';
+        }
+    }
+
+    // 初始化
+    drawWater();
+    MathJax.typesetPromise();
+</script>
+<!-- 學習護照通關按鈕 -->
+<button id="passport-stamp" style="position:fixed; bottom:20px; right:20px; padding:15px 25px; background:#10b981; color:white; border:none; border-radius:50px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); z-index:9999; transition: all 0.2s;">
+  ✅ 我已理解，蓋章通關！
+</button>
+<script>
+  (function() {
+    const btn = document.getElementById('passport-stamp');
+    const moduleId = 'trig_m7'; // ⚠️ 請根據下方表格替換為 m1 ~ m7
+    
+    if(localStorage.getItem(moduleId) === 'true') {
+        btn.innerText = '🏆 已通關 (點擊返回首頁)';
+        btn.style.background = '#0891b2';
+    }
+    
+    btn.addEventListener('click', function() {
+        localStorage.setItem(moduleId, 'true');
+        this.innerText = '🎉 蓋章成功！返回護照...';
+        this.style.background = '#64748b';
+        this.disabled = true;
+        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+    });
+  })();
+</script>
+</body>
+</html>
