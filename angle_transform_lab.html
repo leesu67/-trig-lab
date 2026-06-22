@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>廣義角變換魔法陣 - 手機版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 5px;
+            line-height: 1.3;
+        }
+
+        .header .subtitle {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 10px;
+            width: 100%;
+            position: relative;
+        }
+
+        .svg-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+            max-height: 350px;
+        }
+
+        .controls-panel {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 0.95em;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            margin-bottom: 10px;
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .tips-box {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-left: 5px solid #fdcb6e;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .tips-box h3 {
+            color: #856404;
+            font-size: 1em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tips-box ol {
+            margin-left: 20px;
+            color: #856404;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+
+        .coord-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .coord-table th,
+        .coord-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .coord-table th {
+            background: #667eea;
+            color: white;
+        }
+
+        .coord-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .formula-box {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2em;
+            text-align: center;
+            margin: 8px 0;
+            color: #2c3e50;
+        }
+
+        .quiz-section {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .quiz-section h3 {
+            color: #1976d2;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            padding: 12px;
+            background: white;
+            border: 2px solid #bbdefb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 1em;
+        }
+
+        .quiz-option:hover {
+            background: #bbdefb;
+        }
+
+        .quiz-option.correct {
+            background: #c8e6c9;
+            border-color: #4caf50;
+        }
+
+        .quiz-option.wrong {
+            background: #ffcdd2;
+            border-color: #f44336;
+        }
+
+        .quiz-feedback {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                padding: 10px;
+                border-radius: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.3em;
+            }
+
+            svg {
+                max-height: 280px;
+            }
+
+            .formula {
+                font-size: 1em;
+            }
+
+            select, button {
+                font-size: 16px;
+                padding: 14px;
+            }
+
+            .tips-box ol {
+                font-size: 0.85em;
+            }
+        }
+
+        @media (max-width: 360px) {
+            svg {
+                max-height: 240px;
+            }
+
+            .header h1 {
+                font-size: 1.1em;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            .main-content {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .canvas-container {
+                flex: 1;
+                min-width: 200px;
+            }
+
+            .controls-panel {
+                flex: 1;
+                min-width: 200px;
+            }
+
+            svg {
+                max-height: 200px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .control-group,
+        .tips-box,
+        .quiz-section {
+            animation: fadeIn 0.5s ease;
+        }
+
+        .math-symbol {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 廣義角變換魔法陣</h1>
+            <div class="subtitle">製作：李向宇老師 ｜ 單元 9：三角比</div>
+        </div>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <div class="svg-wrapper">
+                    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 座標軸 -->
+                        <line x1="20" y1="200" x2="380" y2="200" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+                        <line x1="200" y1="20" x2="200" y2="380" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+                        
+                        <!-- 單位圓 -->
+                        <circle cx="200" cy="200" r="150" fill="none" stroke="#667eea" stroke-width="3"/>
+                        
+                        <!-- 基準角終邊 -->
+                        <line id="refLine" x1="200" y1="200" x2="330" y2="125" stroke="#e74c3c" stroke-width="3"/>
+                        
+                        <!-- 變換角終邊 -->
+                        <line id="transLine" x1="200" y1="200" x2="200" y2="50" stroke="#3498db" stroke-width="3" stroke-dasharray="5,3"/>
+                        
+                        <!-- 投影線 -->
+                        <line id="projX" x1="200" y1="200" x2="330" y2="200" stroke="#27ae60" stroke-width="2" stroke-dasharray="3,2"/>
+                        <line id="projY" x1="330" y1="125" x2="330" y2="200" stroke="#f39c12" stroke-width="2" stroke-dasharray="3,2"/>
+                        
+                        <!-- 角度弧線 -->
+                        <path id="angleArc" d="M 240 200 A 40 40 0 0 0 230 185" fill="none" stroke="#9b59b6" stroke-width="2"/>
+                        
+                        <!-- 點 -->
+                        <circle cx="200" cy="200" r="5" fill="#2c3e50"/>
+                        <circle id="refPoint" cx="330" cy="125" r="6" fill="#e74c3c"/>
+                        <circle id="transPoint" cx="200" cy="50" r="6" fill="#3498db"/>
+                        
+                        <!-- 標籤 -->
+                        <text x="340" y="130" font-size="14" fill="#e74c3c" font-weight="bold">P(θ)</text>
+                        <text x="210" y="45" font-size="14" fill="#3498db" font-weight="bold">P'(θ')</text>
+                        <text x="265" y="195" font-size="12" fill="#9b59b6">θ</text>
+                        
+                        <!-- 座標軸標籤 -->
+                        <text x="385" y="205" font-size="16" font-weight="bold" fill="#2c3e50">x</text>
+                        <text x="205" y="25" font-size="16" font-weight="bold" fill="#2c3e50">y</text>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label class="control-label"> 基準角 θ</label>
+                    <select id="angleSelect">
+                        <option value="30">30°</option>
+                        <option value="45">45°</option>
+                        <option value="60">60°</option>
+                        <option value="90">90°</option>
+                        <option value="120">120°</option>
+                        <option value="135">135°</option>
+                        <option value="150">150°</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">🔄 選擇變換類型</label>
+                    <select id="transformSelect">
+                        <option value="-θ">-θ （x軸對稱）</option>
+                        <option value="180-θ">180° - θ （y軸對稱）</option>
+                        <option value="180+θ">180° + θ （原點對稱）</option>
+                        <option value="90-θ">90° - θ （餘角）</option>
+                        <option value="90+θ">90° + θ</option>
+                        <option value="270-θ">270° - θ</option>
+                        <option value="270+θ">270° + θ</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" onclick="applyTransform()">
+                    ✨ 應用變換
+                </button>
+
+                <div class="tips-box">
+                    <h3>💡 李向宇老師的破解心法：</h3>
+                    <ol>
+                        <li><strong>不要死背公式！</strong>請看著左邊的單位圓：</li>
+                        <li><strong>函數名變不變？</strong> 如果變換角是 180° 或 360° 的「偶數倍」，sin 和 cos 不變；如果是 90° 或 270° 的「奇數倍」，sin 和 cos 會互換！</li>
+                        <li><strong>正負號怎麼定？</strong> 把 θ 當作第一象限的銳角，看看變換後的終邊落在第幾象限，再用 <strong>ASTC 口訣</strong> 決定正負號！</li>
+                    </ol>
+                </div>
+
+                <h3 style="margin: 15px 0 10px; color: #2c3e50; font-size: 1.1em;">📊 坐標與對稱關係</h3>
+                <table class="coord-table">
+                    <thead>
+                        <tr>
+                            <th>變換角</th>
+                            <th>幾何對稱軸</th>
+                            <th>坐標</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-θ</td>
+                            <td>x 軸</td>
+                            <td>(x, -y)</td>
+                        </tr>
+                        <tr>
+                            <td>180°-θ</td>
+                            <td>y 軸</td>
+                            <td>(-x, y)</td>
+                        </tr>
+                        <tr>
+                            <td>180°+θ</td>
+                            <td>原點</td>
+                            <td>(-x, -y)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="formula-box">
+                    <h3 style="margin-bottom: 10px; color: #667eea;">✨ 公式推導 (幾何意義)</h3>
+                    <div class="formula" id="formula1">
+                        sin(-θ) = -y = -sin θ
+                    </div>
+                    <div class="formula" id="formula2">
+                        cos(-θ) = x = cos θ
+                    </div>
+                </div>
+
+                <div class="quiz-section">
+                    <h3>🎯 隨堂小測驗</h3>
+                    <p style="margin-bottom: 12px; font-size: 0.95em;">請利用「奇偶倍」與「ASTC」法則，快速判斷：</p>
+                    <div id="quizQuestion" style="font-size: 1.2em; font-weight: bold; margin-bottom: 12px; color: #1976d2;">
+                        sin(270° + θ) = ?
+                    </div>
+                    <div class="quiz-options" id="quizOptions">
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">cos θ</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, true)">-cos θ</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">sin θ</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">-sin θ</div>
+                    </div>
+                    <div id="quizFeedback" class="quiz-feedback"></div>
+                    <button class="btn-primary" onclick="nextQuestion()" style="margin-top: 12px;">
+                        🔄 換一題
+                    </button>
+                </div>
+
+                <button class="btn-primary" style="margin-top: 10px; background: linear-gradient(135deg, #27ae60, #2ecc71);" onclick="showSuccess()">
+                    ✅ 我已理解，蓋章通關！
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizQuestions = [
+            { q: "sin(270° + θ) = ?", a: "-cos θ", correct: 1 },
+            { q: "cos(180° - θ) = ?", a: "-cos θ", correct: 1 },
+            { q: "sin(90° + θ) = ?", a: "cos θ", correct: 0 },
+            { q: "cos(90° - θ) = ?", a: "sin θ", correct: 0 },
+            { q: "sin(180° + θ) = ?", a: "-sin θ", correct: 1 },
+            { q: "cos(270° - θ) = ?", a: "-sin θ", correct: 1 }
+        ];
+
+        let currentQuestion = 0;
+
+        function applyTransform() {
+            const angle = parseInt(document.getElementById('angleSelect').value);
+            const transform = document.getElementById('transformSelect').value;
+            
+            let newAngle;
+            if (transform === '-θ') {
+                newAngle = -angle;
+            } else if (transform === '180-θ') {
+                newAngle = 180 - angle;
+            } else if (transform === '180+θ') {
+                newAngle = 180 + angle;
+            } else if (transform === '90-θ') {
+                newAngle = 90 - angle;
+            } else if (transform === '90+θ') {
+                newAngle = 90 + angle;
+            } else if (transform === '270-θ') {
+                newAngle = 270 - angle;
+            } else if (transform === '270+θ') {
+                newAngle = 270 + angle;
+            }
+            
+            while (newAngle > 180) newAngle -= 360;
+            while (newAngle < -180) newAngle += 360;
+            
+            updateSVG(angle, newAngle);
+            updateFormulas(transform);
+        }
+
+        function updateSVG(refAngle, transAngle) {
+            const refRad = refAngle * Math.PI / 180;
+            const transRad = transAngle * Math.PI / 180;
+            
+            const cx = 200, cy = 200;
+            const r = 150; // 修正：與SVG圓的半徑一致
+            
+            // 基準角點
+            const refX = cx + r * Math.cos(refRad);
+            const refY = cy - r * Math.sin(refRad);
+            
+            // 變換角點
+            const transX = cx + r * Math.cos(transRad);
+            const transY = cy - r * Math.sin(transRad);
+            
+            // 更新線條
+            document.getElementById('refLine').setAttribute('x2', refX);
+            document.getElementById('refLine').setAttribute('y2', refY);
+            document.getElementById('refPoint').setAttribute('cx', refX);
+            document.getElementById('refPoint').setAttribute('cy', refY);
+            
+            document.getElementById('transLine').setAttribute('x2', transX);
+            document.getElementById('transLine').setAttribute('y2', transY);
+            document.getElementById('transPoint').setAttribute('cx', transX);
+            document.getElementById('transPoint').setAttribute('cy', transY);
+            
+            // 更新投影線
+            document.getElementById('projX').setAttribute('x2', refX);
+            document.getElementById('projX').setAttribute('y2', cy);
+            document.getElementById('projY').setAttribute('x1', refX);
+            document.getElementById('projY').setAttribute('x2', refX);
+            document.getElementById('projY').setAttribute('y1', refY);
+            document.getElementById('projY').setAttribute('y2', cy);
+            
+            // 更新標籤位置
+            const refLabel = document.querySelector('text[x="340"]');
+            const transLabel = document.querySelector('text[x="210"]');
+            
+            if (refLabel) {
+                refLabel.setAttribute('x', refX + 10);
+                refLabel.setAttribute('y', refY - 10);
+            }
+            if (transLabel) {
+                transLabel.setAttribute('x', transX + 10);
+                transLabel.setAttribute('y', transY - 10);
+            }
+        }
+
+        function updateFormulas(transform) {
+            const formulas = {
+                '-θ': ['sin(-θ) = -sin θ', 'cos(-θ) = cos θ'],
+                '180-θ': ['sin(180°-θ) = sin θ', 'cos(180°-θ) = -cos θ'],
+                '180+θ': ['sin(180°+θ) = -sin θ', 'cos(180°+θ) = -cos θ'],
+                '90-θ': ['sin(90°-θ) = cos θ', 'cos(90°-θ) = sin θ'],
+                '90+θ': ['sin(90°+θ) = cos θ', 'cos(90°+θ) = -sin θ'],
+                '270-θ': ['sin(270°-θ) = -cos θ', 'cos(270°-θ) = -sin θ'],
+                '270+θ': ['sin(270°+θ) = -cos θ', 'cos(270°+θ) = sin θ']
+            };
+            
+            const [f1, f2] = formulas[transform];
+            document.getElementById('formula1').textContent = f1;
+            document.getElementById('formula2').textContent = f2;
+        }
+
+        function checkAnswer(element, isCorrect) {
+            const feedback = document.getElementById('quizFeedback');
+            const options = document.querySelectorAll('.quiz-option');
+            
+            options.forEach(opt => opt.style.pointerEvents = 'none');
+            
+            if (isCorrect) {
+                element.classList.add('correct');
+                feedback.textContent = '✅ 正確！太棒了！';
+                feedback.style.background = '#c8e6c9';
+                feedback.style.color = '#2e7d32';
+            } else {
+                element.classList.add('wrong');
+                feedback.textContent = '❌ 再想想看！提示：用 ASTC 法則判斷象限';
+                feedback.style.background = '#ffcdd2';
+                feedback.style.color = '#c62828';
+            }
+            
+            feedback.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestion = (currentQuestion + 1) % quizQuestions.length;
+            const q = quizQuestions[currentQuestion];
+            
+            document.getElementById('quizQuestion').textContent = q.q;
+            document.getElementById('quizFeedback').style.display = 'none';
+            
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach(opt => {
+                opt.classList.remove('correct', 'wrong');
+                opt.style.pointerEvents = 'auto';
+            });
+        }
+
+        function showSuccess() {
+            alert(' 恭喜完成學習！你已經掌握了廣義角變換的要訣！');
+        }
+
+        window.onload = function() {
+            applyTransform();
+        };
+    </script>
+</body>
+</html>
