@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>互動式單位圓</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        /* SVG 容器 - 自適應手機寬度 */
+        .svg-wrapper {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #f0f9ff;
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        /* 控制面板 */
+        .controls {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #2196f3;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        input[type=range]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #2196f3;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Checkbox 網格 */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85em;
+        }
+
+        .checkbox-item:hover {
+            border-color: #2196f3;
+        }
+
+        .checkbox-item input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            margin-right: 6px;
+            cursor: pointer;
+        }
+
+        .checkbox-item.active {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        /* 數值顯示 */
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .value-card {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            border-left: 4px solid #2196f3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .value-card.orange {
+            border-left-color: #ff9800;
+        }
+
+        .math-formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 1em;
+            margin: 4px 0;
+            color: #333;
+        }
+
+        .math-formula .label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .math-formula .value {
+            color: #2196f3;
+            font-weight: 600;
+        }
+
+        /* 特殊角度提示 */
+        .angle-badge {
+            display: inline-block;
+            background: #ff9800;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 360px) {
+            h1 { font-size: 1.1em; }
+            .checkbox-grid { grid-template-columns: repeat(2, 1fr); }
+            .values-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1> 互動式單位圓</h1>
+    <p class="subtitle">拖動滑桿觀察三角函數線段的變化</p>
+
+    <!-- SVG 繪圖區 -->
+    <div class="svg-wrapper">
+        <svg viewBox="-250 -250 500 500" id="unit-circle-svg">
+            <!-- 座標軸 -->
+            <line x1="-220" y1="0" x2="220" y2="0" stroke="#333" stroke-width="2" />
+            <line x1="0" y1="220" x2="0" y2="-220" stroke="#333" stroke-width="2" />
+            <text x="230" y="10" font-size="20" font-weight="bold">x</text>
+            <text x="10" y="-230" font-size="20" font-weight="bold">y</text>
+
+            <!-- 單位圓 -->
+            <circle cx="0" cy="0" r="200" fill="none" stroke="#ff9800" stroke-width="3" />
+
+            <!-- 動態元素 -->
+            <g id="dynamic-group">
+                <!-- 半徑線 -->
+                <line id="line-radius" x1="0" y1="0" x2="0" y2="0" stroke="#333" stroke-width="2" />
+                <circle id="point-p" cx="0" cy="0" r="6" fill="#333" />
+                
+                <!-- Sin -->
+                <line id="line-sin" x1="0" y1="0" x2="0" y2="0" stroke="#00bcd4" stroke-width="3" />
+                <text id="label-sin" x="0" y="0" font-size="14" font-weight="bold" fill="#00bcd4">sin θ</text>
+
+                <!-- Cos -->
+                <line id="line-cos" x1="0" y1="0" x2="0" y2="0" stroke="#ff5252" stroke-width="3" />
+                <text id="label-cos" x="0" y="0" font-size="14" font-weight="bold" fill="#ff5252">cos θ</text>
+
+                <!-- Tan -->
+                <line id="line-tan" x1="200" y1="0" x2="200" y2="0" stroke="#4caf50" stroke-width="2" stroke-dasharray="5" />
+                <text id="label-tan" x="210" y="0" font-size="14" font-weight="bold" fill="#4caf50">tan θ</text>
+
+                <!-- Cot -->
+                <line id="line-cot" x1="0" y1="-200" x2="0" y2="-200" stroke="#9c27b0" stroke-width="2" stroke-dasharray="5" />
+                <text id="label-cot" x="0" y="-210" font-size="14" font-weight="bold" fill="#9c27b0">cot θ</text>
+
+                <!-- Sec -->
+                <line id="line-sec" x1="0" y1="0" x2="0" y2="0" stroke="#ff9800" stroke-width="2" />
+                <circle id="point-sec" cx="0" cy="0" r="5" fill="#ff9800" />
+                <text id="label-sec" x="0" y="20" font-size="14" font-weight="bold" fill="#ff9800">sec θ</text>
+
+                <!-- Csc -->
+                <line id="line-csc" x1="0" y1="0" x2="0" y2="0" stroke="#ff9800" stroke-width="2" />
+                <circle id="point-csc" cx="0" cy="0" r="5" fill="#ff9800" />
+                <text id="label-csc" x="20" y="0" font-size="14" font-weight="bold" fill="#ff9800">csc θ</text>
+                
+                <!-- 過P點的切線 -->
+                <line id="line-tangent-p" x1="0" y1="0" x2="0" y2="0" stroke="#999" stroke-width="1" stroke-dasharray="3" />
+            </g>
+        </svg>
+    </div>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <div class="slider-container">
+            <div class="slider-label">
+                <span>角度 θ</span>
+                <span id="angle-display">0° <span class="angle-badge" id="special-angle">0</span></span>
+            </div>
+            <input type="range" id="angle-slider" min="0" max="6.2832" step="0.01" value="0">
+        </div>
+
+        <div class="checkbox-grid">
+            <label class="checkbox-item active">
+                <input type="checkbox" id="show-sin" checked> sin θ
+            </label>
+            <label class="checkbox-item active">
+                <input type="checkbox" id="show-cos" checked> cos θ
+            </label>
+            <label class="checkbox-item active">
+                <input type="checkbox" id="show-tan" checked> tan θ
+            </label>
+            <label class="checkbox-item active">
+                <input type="checkbox" id="show-cot" checked> cot θ
+            </label>
+            <label class="checkbox-item active">
+                <input type="checkbox" id="show-sec" checked> sec θ
+            </label>
+            <label class="checkbox-item active">
+                <input type="checkbox" id="show-csc" checked> csc θ
+            </label>
+        </div>
+    </div>
+
+    <!-- 數值顯示 -->
+    <div class="values-grid" id="values-display">
+        <!-- 由 JS 填入 -->
+    </div>
+</div>
+
+<script>
+    const slider = document.getElementById('angle-slider');
+    const angleDisplay = document.getElementById('angle-display');
+    const specialAngleBadge = document.getElementById('special-angle');
+    const valuesDisplay = document.getElementById('values-display');
+
+    // SVG 元素
+    const els = {
+        radius: document.getElementById('line-radius'),
+        pointP: document.getElementById('point-p'),
+        sin: document.getElementById('line-sin'),
+        cos: document.getElementById('line-cos'),
+        tan: document.getElementById('line-tan'),
+        cot: document.getElementById('line-cot'),
+        sec: document.getElementById('line-sec'),
+        csc: document.getElementById('line-csc'),
+        tangentP: document.getElementById('line-tangent-p'),
+        labels: {
+            sin: document.getElementById('label-sin'),
+            cos: document.getElementById('label-cos'),
+            tan: document.getElementById('label-tan'),
+            cot: document.getElementById('label-cot'),
+            sec: document.getElementById('label-sec'),
+            csc: document.getElementById('label-csc')
+        },
+        points: {
+            sec: document.getElementById('point-sec'),
+            csc: document.getElementById('point-csc')
+        }
+    };
+
+    // 特殊角度
+    const specialAngles = [
+        { rad: 0, deg: '0°', label: '0' },
+        { rad: Math.PI/6, deg: '30°', label: 'π/6' },
+        { rad: Math.PI/4, deg: '45°', label: 'π/4' },
+        { rad: Math.PI/3, deg: '60°', label: 'π/3' },
+        { rad: Math.PI/2, deg: '90°', label: 'π/2' },
+        { rad: 2*Math.PI/3, deg: '120°', label: '2π/3' },
+        { rad: 3*Math.PI/4, deg: '135°', label: '3π/4' },
+        { rad: 5*Math.PI/6, deg: '150°', label: '5π/6' },
+        { rad: Math.PI, deg: '180°', label: 'π' },
+        { rad: 7*Math.PI/6, deg: '210°', label: '7π/6' },
+        { rad: 5*Math.PI/4, deg: '225°', label: '5π/4' },
+        { rad: 4*Math.PI/3, deg: '240°', label: '4π/3' },
+        { rad: 3*Math.PI/2, deg: '270°', label: '3π/2' },
+        { rad: 5*Math.PI/3, deg: '300°', label: '5π/3' },
+        { rad: 7*Math.PI/4, deg: '315°', label: '7π/4' },
+        { rad: 11*Math.PI/6, deg: '330°', label: '11π/6' },
+        { rad: 2*Math.PI, deg: '360°', label: '2π' }
+    ];
+
+    function findSpecialAngle(theta) {
+        for (let sa of specialAngles) {
+            if (Math.abs(sa.rad - theta) < 0.05) {
+                return sa;
+            }
+        }
+        return null;
+    }
+
+    function getFraction(val) {
+        if (Math.abs(val) < 0.001) return "0";
+        if (Math.abs(val - 0.5) < 0.01) return "1/2";
+        if (Math.abs(val + 0.5) < 0.01) return "-1/2";
+        if (Math.abs(val - 0.707) < 0.01) return "√2/2";
+        if (Math.abs(val + 0.707) < 0.01) return "-√2/2";
+        if (Math.abs(val - 0.866) < 0.01) return "√3/2";
+        if (Math.abs(val + 0.866) < 0.01) return "-√3/2";
+        if (Math.abs(val - 1) < 0.01) return "1";
+        if (Math.abs(val + 1) < 0.01) return "-1";
+        if (Math.abs(val - 1.414) < 0.01) return "√2";
+        if (Math.abs(val + 1.414) < 0.01) return "-√2";
+        if (Math.abs(val - 1.732) < 0.01) return "√3";
+        if (Math.abs(val + 1.732) < 0.01) return "-√3";
+        if (Math.abs(val) > 100) return "∞";
+        return val.toFixed(3);
+    }
+
+    function update(theta) {
+        const r = 200;
+        const x = Math.cos(theta) * r;
+        const y = Math.sin(theta) * r;
+        
+        const sinVal = Math.sin(theta);
+        const cosVal = Math.cos(theta);
+        const tanVal = Math.tan(theta);
+        const cotVal = 1 / tanVal;
+        const secVal = 1 / cosVal;
+        const cscVal = 1 / sinVal;
+
+        // 更新角度顯示
+        const special = findSpecialAngle(theta);
+        const degVal = (theta * 180 / Math.PI).toFixed(1);
+        if (special) {
+            angleDisplay.innerHTML = `${special.deg} <span class="angle-badge">${special.label}</span>`;
+        } else {
+            angleDisplay.innerHTML = `${degVal}°`;
+        }
+
+        // 座標轉換函數 (SVG y軸向下)
+        const drawX = (val) => val;
+        const drawY = (val) => -val;
+
+        // 1. 半徑線和點P
+        els.radius.setAttribute('x2', drawX(x));
+        els.radius.setAttribute('y2', drawY(y));
+        els.pointP.setAttribute('cx', drawX(x));
+        els.pointP.setAttribute('cy', drawY(y));
+
+        // 2. Sin (垂直線)
+        els.sin.setAttribute('x1', drawX(x));
+        els.sin.setAttribute('y1', drawY(0));
+        els.sin.setAttribute('x2', drawX(x));
+        els.sin.setAttribute('y2', drawY(y));
+        els.labels.sin.setAttribute('x', drawX(x > 0 ? x + 10 : x - 40));
+        els.labels.sin.setAttribute('y', drawY(y / 2));
+
+        // 3. Cos (水平線)
+        els.cos.setAttribute('x1', drawX(0));
+        els.cos.setAttribute('y1', drawY(0));
+        els.cos.setAttribute('x2', drawX(x));
+        els.cos.setAttribute('y2', drawY(0));
+        els.labels.cos.setAttribute('x', drawX(x / 2 - 20));
+        els.labels.cos.setAttribute('y', drawY(-15));
+
+        // 4. Tan (x=1 處)
+        const tanY = Math.abs(tanVal) > 2 ? (tanVal > 0 ? 400 : -400) : tanVal * r;
+        els.tan.setAttribute('x1', drawX(r));
+        els.tan.setAttribute('y1', drawY(0));
+        els.tan.setAttribute('x2', drawX(r));
+        els.tan.setAttribute('y2', drawY(tanY));
+        els.labels.tan.setAttribute('x', drawX(r + 10));
+        els.labels.tan.setAttribute('y', drawY(tanY / 2));
+
+        // 5. Cot (y=1 處)
+        const cotX = Math.abs(cotVal) > 2 ? (cotVal > 0 ? 400 : -400) : cotVal * r;
+        els.cot.setAttribute('x1', drawX(0));
+        els.cot.setAttribute('y1', drawY(r));
+        els.cot.setAttribute('x2', drawX(cotX));
+        els.cot.setAttribute('y2', drawY(r));
+        els.labels.cot.setAttribute('x', drawX(cotX / 2));
+        els.labels.cot.setAttribute('y', drawY(r + 20));
+
+        // 6. Sec (x軸截距)
+        const secX = Math.abs(secVal) > 2 ? (secVal > 0 ? 400 : -400) : secVal * r;
+        els.sec.setAttribute('x1', drawX(0));
+        els.sec.setAttribute('y1', drawY(0));
+        els.sec.setAttribute('x2', drawX(secX));
+        els.sec.setAttribute('y2', drawY(0));
+        els.points.sec.setAttribute('cx', drawX(secX));
+        els.points.sec.setAttribute('cy', drawY(0));
+        els.labels.sec.setAttribute('x', drawX(secX > 0 ? secX - 40 : secX + 10));
+        els.labels.sec.setAttribute('y', drawY(20));
+
+        // 7. Csc (y軸截距)
+        const cscY = Math.abs(cscVal) > 2 ? (cscVal > 0 ? 400 : -400) : cscVal * r;
+        els.csc.setAttribute('x1', drawX(0));
+        els.csc.setAttribute('y1', drawY(0));
+        els.csc.setAttribute('x2', drawX(0));
+        els.csc.setAttribute('y2', drawY(cscY));
+        els.points.csc.setAttribute('cx', drawX(0));
+        els.points.csc.setAttribute('cy', drawY(cscY));
+        els.labels.csc.setAttribute('x', drawX(15));
+        els.labels.csc.setAttribute('y', drawY(cscY > 0 ? cscY - 10 : cscY + 20));
+
+        // 8. 過P點的切線
+        els.tangentP.setAttribute('x1', drawX(secX));
+        els.tangentP.setAttribute('y1', drawY(0));
+        els.tangentP.setAttribute('x2', drawX(0));
+        els.tangentP.setAttribute('y2', drawY(cscY));
+
+        // 更新數值
+        updateValues(sinVal, cosVal, tanVal, cotVal, secVal, cscVal);
+    }
+
+    function updateValues(sin, cos, tan, cot, sec, csc) {
+        valuesDisplay.innerHTML = `
+            <div class="value-card">
+                <div class="math-formula"><span class="label">sin θ =</span> <span class="value">${getFraction(sin)}</span></div>
+                <div class="math-formula"><span class="label">cos θ =</span> <span class="value">${getFraction(cos)}</span></div>
+                <div class="math-formula"><span class="label">tan θ =</span> <span class="value">${getFraction(tan)}</span></div>
+            </div>
+            <div class="value-card orange">
+                <div class="math-formula"><span class="label">csc θ =</span> <span class="value">${getFraction(csc)}</span></div>
+                <div class="math-formula"><span class="label">sec θ =</span> <span class="value">${getFraction(sec)}</span></div>
+                <div class="math-formula"><span class="label">cot θ =</span> <span class="value">${getFraction(cot)}</span></div>
+            </div>
+        `;
+    }
+
+    // 事件監聽
+    slider.addEventListener('input', (e) => {
+        update(parseFloat(e.target.value));
+    });
+
+    // Checkbox 樣式更新
+    document.querySelectorAll('.checkbox-item input[type=checkbox]').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const item = e.target.closest('.checkbox-item');
+            if (e.target.checked) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+            
+            // 顯示/隱藏對應元素
+            const id = e.target.id.replace('show-', '');
+            const elements = {
+                'sin': [els.sin, els.labels.sin],
+                'cos': [els.cos, els.labels.cos],
+                'tan': [els.tan, els.labels.tan],
+                'cot': [els.cot, els.labels.cot],
+                'sec': [els.sec, els.labels.sec, els.points.sec],
+                'csc': [els.csc, els.labels.csc, els.points.csc]
+            };
+            
+            const isVisible = e.target.checked;
+            if (elements[id]) {
+                elements[id].forEach(el => {
+                    el.style.display = isVisible ? '' : 'none';
+                });
+            }
+        });
+    });
+
+    // 初始化
+    update(0);
+</script>
+
+</body>
+</html>
