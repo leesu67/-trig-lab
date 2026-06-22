@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全方位三角比互動實驗室 | 李向宇老師製作</title>
+    <style>
+        :root {
+            --primary: #0891b2; /* 幾何青 */
+            --bg: #0f172a; /* 深海藍 */
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #f59e0b; /* 活力橙 */
+            --success: #10b981;
+        }
+        body {
+            font-family: 'Noto Sans TC', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 10% 20%, rgba(8, 145, 178, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 40%);
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { text-align: center; padding: 40px 0 20px; }
+        header h1 { font-size: 32px; margin: 0; background: linear-gradient(to right, #22d3ee, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        header p { color: #94a3b8; margin-top: 10px; font-size: 16px; }
+
+        .passport {
+            background: var(--card);
+            border: 2px dashed var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 30px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .passport-info { flex: 1; min-width: 200px; }
+        .passport-info h2 { margin: 0 0 5px; color: var(--accent); font-size: 20px; }
+        .passport-info p { margin: 0; color: #cbd5e1; font-size: 14px; }
+        
+        .stamps { display: flex; gap: 12px; flex-wrap: wrap; }
+        .stamp {
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px;
+            border: 2px solid #475569;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .stamp.active {
+            background: var(--success);
+            border-color: #34d399;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+            transform: scale(1.1);
+        }
+        .stamp::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: -18px;
+            font-size: 11px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        .section-title {
+            font-size: 18px;
+            color: #22d3ee;
+            margin: 30px 0 15px;
+            border-left: 4px solid var(--accent);
+            padding-left: 10px;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #334155;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .card h3 { margin: 0 0 10px; font-size: 18px; color: #22d3ee; }
+        .card p { margin: 0; color: #94a3b8; font-size: 14px; line-height: 1.6; flex: 1; }
+        .card .btn {
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .card.completed .btn { background: var(--success); }
+
+        .reset-btn {
+            display: block;
+            margin: 40px auto 0;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .reset-btn:hover { background: rgba(239, 68, 68, 0.1); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📐 全方位三角比互動實驗室</h1>
+        <p>製作：李向宇老師 ｜ 探索廣義角、正餘弦定理與學測素養的幾何靈魂</p>
+    </header>
+
+    <div class="passport">
+        <div class="passport-info">
+            <h2>📘 探索者學習護照</h2>
+            <p>完成每個模組的互動體驗並蓋章，解鎖三角比的終極幾何直覺！</p>
+        </div>
+        <div class="stamps">
+            <div class="stamp" id="s1" data-label="ASTC">🔒</div>
+            <div class="stamp" id="s2" data-label="變換">🔒</div>
+            <div class="stamp" id="s3" data-label="比較">🔒</div>
+            <div class="stamp" id="s4" data-label="極坐標">🔒</div>
+            <div class="stamp" id="s5" data-label="面積">🔒</div>
+            <div class="stamp" id="s6" data-label="戰術">🔒</div>
+            <div class="stamp" id="s7" data-label="素養">🔒</div>
+        </div>
+    </div>
+
+    <div class="section-title">🧭 階段一：廣義角與坐標系統</div>
+    <div class="grid">
+        <a href="astc_compass.html" class="card" id="card1">
+            <h3>1. ASTC 象限羅盤與同界角雷達</h3>
+            <p>拖曳射線旋轉，即時觀察三角比正負號與 ASTC 口訣的連動，秒懂同界角意義。</p>
+            <div class="btn">進入實驗室 ➔</div>
+        </a>
+        <a href="angle_transform_lab.html" class="card" id="card2">
+            <h3>2. 廣義角變換魔法陣</h3>
+            <p>視覺化單位圓的對稱幾何，破解「單變雙不變、正負看象限」的誘導公式迷思。</p>
+            <div class="btn">進入實驗室 ➔</div>
+        </a>
+        <a href="trig_comparison_balance.html" class="card" id="card3">
+            <h3>3. 三角比大小比較天平</h3>
+            <p>將 sin, cos, tan 轉化為線段長短比賽，親眼見證 45° 與 60° 臨界點的翻轉瞬間。</p>
+            <div class="btn">進入實驗室 ➔</div>
+        </a>
+        <a href="polar_radar.html" class="card" id="card4">
+            <h3>4. 極坐標雷達掃描儀</h3>
+            <p>沉浸式雷達體驗，直觀理解極坐標與直角坐標的轉換，以及圓與射線的軌跡方程式。</p>
+            <div class="btn">進入實驗室 ➔</div>
+        </a>
+    </div>
+
+    <div class="section-title">📐 階段二：三角形幾何與定理驗證</div>
+    <div class="grid">
+        <a href="four_area_formulas.html" class="card" id="card5">
+            <h3>5. 四大面積公式與雙圓驗證</h3>
+            <p>自由拉扯三角形，見證 1/2bcsinA、海龍、rs、abc/4R 四個公式結果永遠相等的終極對稱之美。</p>
+            <div class="btn">進入實驗室 ➔</div>
+        </a>
+        <a href="trig_tactical_blueprint.html" class="card" id="card6">
+            <h3>6. 三角幾何戰術藍圖</h3>
+            <p>從正餘弦定理到建中鬼才的實戰解題策略，包含核心診斷矩陣、決策流程圖、SSA雙重宇宙與實戰兵法。</p>
+            <div class="btn">進入實驗室 ➔</div>
+        </a>
+    </div>
+
+    <div class="section-title">🧩 階段三：學測素養實戰</div>
+    <div class="grid">
+        <a href="literacy_trig_puzzle.html" class="card" id="card7">
+            <h3>7. 素養情境解謎室 (水車與影子)</h3>
+            <p>動態物理連動動畫，親自拖曳水車與太陽仰角，尋找極值與臨界點，打通數學建模任督二脈。</p>
+            <div class="btn">進入實驗室 ➔</div>
+        </a>
+    </div>
+
+    <button class="reset-btn" onclick="resetPassport()">🔄 重置學習護照 (教師專用)</button>
+</div>
+
+<script>
+    const modules = [
+        { id: 'trig_m1', stamp: 's1', card: 'card1' },
+        { id: 'trig_m2', stamp: 's2', card: 'card2' },
+        { id: 'trig_m3', stamp: 's3', card: 'card3' },
+        { id: 'trig_m4', stamp: 's4', card: 'card4' },
+        { id: 'trig_m5', stamp: 's5', card: 'card5' },
+        { id: 'trig_m6', stamp: 's6', card: 'card6' },
+        { id: 'trig_m7', stamp: 's7', card: 'card7' }
+    ];
+
+    function checkPassport() {
+        modules.forEach(m => {
+            const isDone = localStorage.getItem(m.id) === 'true';
+            const stampEl = document.getElementById(m.stamp);
+            const cardEl = document.getElementById(m.card);
+            
+            if (isDone) {
+                stampEl.classList.add('active');
+                stampEl.innerText = '✅';
+                cardEl.classList.add('completed');
+                cardEl.querySelector('.btn').innerText = '🏆 已通關 (再次複習) ➔';
+            }
+        });
+    }
+
+    function resetPassport() {
+        if(confirm('確定要重置所有三角比學習護照進度嗎？')) {
+            modules.forEach(m => localStorage.removeItem(m.id));
+            location.reload();
+        }
+    }
+
+    checkPassport();
+</script>
+
+</body>
+</html>

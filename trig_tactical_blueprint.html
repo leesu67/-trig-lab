@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角幾何戰術藍圖 | 李向宇老師製作</title>
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #1e3a8a; --sine: #f97316; --cosine: #10b981;
+            --danger: #ef4444; --accent: #f59e0b; --bg: #f8fafc;
+            --card: #ffffff; --text: #1e293b; --border: #e2e8f0;
+        }
+        body { font-family: 'Noto Sans TC', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--card); border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--primary), #312e81); color: white; padding: 24px; text-align: center; }
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 8px 0 0; opacity: 0.9; font-size: 14px; }
+
+        /* 🛠️ 修復：改為橫向滑動選單，防止換行導致點擊失效 */
+        .tabs {
+            display: flex;
+            overflow-x: auto; /* 允許橫向滾動 */
+            white-space: nowrap; /* 防止文字換行 */
+            flex-wrap: nowrap; /* 強制不換行 */
+            background: #f1f5f9;
+            border-bottom: 2px solid var(--border);
+            position: relative;
+            z-index: 10; /* 確保在最上層 */
+            scrollbar-width: none; /* 隱藏滾動條 (Firefox) */
+            -ms-overflow-style: none; /* 隱藏滾動條 (IE/Edge) */
+        }
+        .tabs::-webkit-scrollbar { display: none; /* 隱藏滾動條 (Chrome/Safari) */ }
+
+        .tab-btn {
+            flex: 0 0 auto; /* 不伸縮，固定寬度 */
+            min-width: 120px; /* 最小寬度 */
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: bold;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px; /* 蓋住底邊框 */
+        }
+        .tab-btn.active { color: var(--primary); background: white; border-bottom-color: var(--primary); }
+        .tab-btn[data-tab="sine"].active { color: var(--sine); border-bottom-color: var(--sine); }
+        .tab-btn[data-tab="cosine"].active { color: var(--cosine); border-bottom-color: var(--cosine); }
+        .tab-btn[data-tab="ssa"].active { color: var(--danger); border-bottom-color: var(--danger); }
+
+        .main-content { padding: 24px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-title { font-size: 20px; color: var(--primary); margin: 0 0 16px; padding-bottom: 8px; border-bottom: 3px solid var(--primary); }
+        
+        .matrix-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        .matrix-table th, .matrix-table td { border: 2px solid var(--border); padding: 12px; text-align: center; }
+        .matrix-table th { background: var(--primary); color: white; font-size: 14px; }
+        .matrix-table tr { cursor: pointer; transition: all 0.2s; }
+        .matrix-table tr:hover { background: #eff6ff; }
+        .matrix-table tr.selected { background: #dbeafe; border: 2px solid var(--primary); }
+        .rec-sine { color: var(--sine); font-weight: bold; }
+        .rec-cosine { color: var(--cosine); font-weight: bold; }
+
+        .flowchart { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 20px 0; }
+        .flow-node { padding: 14px 24px; border-radius: 10px; font-weight: bold; font-size: 15px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .flow-start { background: var(--primary); color: white; }
+        .flow-question { background: #fef3c7; border: 2px solid var(--accent); color: #92400e; }
+        .flow-action-sine { background: var(--sine); color: white; }
+        .flow-action-cosine { background: var(--cosine); color: white; }
+        .flow-arrow { font-size: 20px; color: #64748b; }
+        .flow-branch { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+        .label-yes { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .label-no { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+
+        .canvas-container { background: #fdfdfd; border: 2px dashed var(--border); border-radius: 12px; display: flex; justify-content: center; align-items: center; min-height: 400px; margin: 16px 0; overflow: hidden; }
+        canvas { max-width: 100%; touch-action: none; border-radius: 8px; }
+
+        .control-panel { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 16px 0; }
+        .control-panel h3 { margin: 0 0 12px; font-size: 16px; color: var(--primary); border-bottom: 2px solid var(--primary); display: inline-block; padding-bottom: 4px; }
+        .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .slider-row label { font-weight: bold; min-width: 100px; font-size: 14px; }
+        .slider-row input { flex: 1; accent-color: var(--primary); }
+        .slider-row .val { font-family: monospace; font-weight: bold; color: var(--primary); min-width: 50px; text-align: right; }
+
+        .info-card { background: white; border: 2px solid var(--border); border-radius: 10px; padding: 16px; margin: 12px 0; }
+        .info-card.sine-card { border-left: 5px solid var(--sine); }
+        .info-card.cosine-card { border-left: 5px solid var(--cosine); }
+        .info-card.danger-card { border-left: 5px solid var(--danger); background: #fef2f2; }
+        .info-card h4 { margin: 0 0 8px; font-size: 16px; }
+        
+        .formula-box { font-size: 20px; text-align: center; margin: 12px 0; font-family: 'Times New Roman', serif; overflow-x: auto; padding: 10px 0; }
+
+        .evolution-formula { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 15px; margin: 20px 0; font-size: 18px; }
+        .evolution-part { text-align: center; }
+        .evolution-plus { font-size: 32px; font-weight: bold; color: var(--accent); }
+        .evolution-label { font-size: 12px; color: #64748b; margin-top: 5px; display: block; }
+
+        .funnel-container { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 20px 0; }
+        .funnel-layer { padding: 12px 20px; border-radius: 8px; font-weight: bold; text-align: center; max-width: 500px; width: 100%; }
+        .funnel-1 { background: #fee2e2; border: 2px solid var(--danger); color: #991b1b; }
+        .funnel-2 { background: #fef3c7; border: 2px solid var(--accent); color: #92400e; }
+        .funnel-3 { background: #d1fae5; border: 2px solid var(--cosine); color: #065f46; }
+        .funnel-result { background: var(--primary); color: white; padding: 14px 30px; border-radius: 10px; font-size: 18px; }
+
+        .teacher-tip { margin-top: 20px; padding: 16px; background: #eff6ff; border-left: 4px solid var(--primary); border-radius: 6px; font-size: 14px; color: #1e3a8a; line-height: 1.6; }
+        .teacher-tip strong { color: var(--primary); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🗺️ 三角幾何戰術藍圖</h1>
+        <p>製作：李向宇老師 ｜ 從正餘弦定理到建中鬼才的實戰解題策略</p>
+    </header>
+
+    <!-- 🛠️ 修復：標籤列現在可以橫向滑動 -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="diagnosis" onclick="switchTab('diagnosis')"> 核心診斷矩陣</button>
+        <button class="tab-btn" data-tab="flowchart" onclick="switchTab('flowchart')">🧠 大腦決策流程</button>
+        <button class="tab-btn" data-tab="sine" onclick="switchTab('sine')">🔗 正弦：成對鎖鏈</button>
+        <button class="tab-btn" data-tab="cosine" onclick="switchTab('cosine')">✂️ 餘弦：夾角鉸鏈</button>
+        <button class="tab-btn" data-tab="ssa" onclick="switchTab('ssa')">⚠️ SSA 雙重宇宙</button>
+        <button class="tab-btn" data-tab="tactics" onclick="switchTab('tactics')">⚔️ 實戰兵法</button>
+    </div>
+
+    <div class="main-content">
+        <!-- Tab 1: 核心診斷矩陣 -->
+        <div class="tab-panel active" id="panel-diagnosis">
+            <h2 class="section-title">🎯 核心診斷矩陣：正弦與餘弦的絕對分界線</h2>
+            <p style="color:#475569; margin-bottom:16px;">點擊下方的幾何條件，自動幫你決定首選武器！</p>
+            
+            <table class="matrix-table" id="matrix-table">
+                <tr><th>幾何條件</th><th>圖示</th><th>首選定理</th><th>視覺判定</th></tr>
+                <tr data-type="sss" onclick="selectMatrix(this)"><td><strong>SSS</strong><br>(三邊)</td><td>🔺</td><td class="rec-cosine">餘弦定理</td><td>尋找夾角。</td></tr>
+                <tr data-type="sas" onclick="selectMatrix(this)"><td><strong>SAS</strong><br>(兩邊一夾角)</td><td>✂️</td><td class="rec-cosine">餘弦定理</td><td>求出第三邊。</td></tr>
+                <tr data-type="asa" onclick="selectMatrix(this)"><td><strong>ASA / AAS</strong><br>(已知兩角)</td><td></td><td class="rec-sine">正弦定理</td><td>透過內角和 180° 找出第三角，啟動鎖鏈。</td></tr>
+                <tr data-type="ssa" onclick="selectMatrix(this)"><td><strong>SSA</strong><br>(兩邊一對角)</td><td>⚠️</td><td class="rec-sine">正弦定理</td><td>危險地帶，啟動正弦尋找對角。</td></tr>
+                <tr data-type="circum" onclick="selectMatrix(this)"><td><strong>外接圓 (R)</strong></td><td></td><td class="rec-sine">正弦定理</td><td>毫無懸念，唯一解。</td></tr>
+            </table>
+
+            <div class="info-card" id="matrix-detail" style="display:none;">
+                <h4 id="matrix-detail-title"></h4>
+                <p id="matrix-detail-desc"></p>
+                <div class="formula-box" id="matrix-detail-formula"></div>
+            </div>
+
+            <div class="teacher-tip">
+                <strong>停止猶豫，讓已知條件自動幫你決定武器。</strong><br>
+                多數考生的致命傷並非背錯公式，而是缺乏「資訊配對」的直覺。開始像建築師一樣測量幾何資訊，而不是看到題目就盲目代入數字！
+            </div>
+        </div>
+
+        <!-- Tab 2: 大腦決策流程圖 -->
+        <div class="tab-panel" id="panel-flowchart">
+            <h2 class="section-title">🧠 考場實戰：大腦決策流程圖</h2>
+            <p style="color:#475569; margin-bottom:16px;">依循此路徑，你的大腦能在 3 秒內鎖定正確解法。</p>
+            
+            <div class="flowchart">
+                <div class="flow-node flow-start">我現在擁有什麼已知條件？</div>
+                <div class="flow-arrow">️</div>
+                <div class="flow-node flow-question">有外接圓半徑 R 嗎？</div>
+                <div class="flow-branch">
+                    <div><span class="label-yes">Yes</span><div class="flow-arrow">➡️</div><div class="flow-node flow-action-sine">走正弦定理<br>$\frac{a}{\sin A} = 2R$</div></div>
+                    <div><span class="label-no">No</span><div class="flow-arrow">⬇️</div></div>
+                </div>
+                <div class="flow-node flow-question">條件中有「對角與對邊」的完整組合嗎？<br><small>(例如已知 ∠A 與 a)</small></div>
+                <div class="flow-branch">
+                    <div><span class="label-yes">Yes</span><div class="flow-arrow">➡️</div><div class="flow-node flow-action-sine">走正弦定理<br>啟動鎖鏈效應</div></div>
+                    <div><span class="label-no">No</span><div class="flow-arrow">️</div></div>
+                </div>
+                <div class="flow-node flow-question">是 SSS (只知三邊) 或 SAS (兩邊夾一角) 嗎？</div>
+                <div class="flow-branch">
+                    <div><span class="label-yes">Yes</span><div class="flow-arrow">➡️</div><div class="flow-node flow-action-cosine">走餘弦定理<br>夾角鉸鏈鎖定</div></div>
+                </div>
+            </div>
+
+            <div class="teacher-tip">
+                💡 <strong>學霸鐵律：</strong>算出 sin 值後，務必回頭檢查「大邊對大角」，刪除不合理的多餘解。面對 SSA 的雙重宇宙，永遠要保持警惕！
+            </div>
+        </div>
+
+        <!-- Tab 3: 正弦定理 -->
+        <div class="tab-panel" id="panel-sine">
+            <h2 class="section-title">🔗 武器一：正弦定理與「成對的鎖鏈」</h2>
+            
+            <div class="info-card sine-card">
+                <h4>核心觀念：連鎖效應</h4>
+                <p>正弦定理的本質，就是尋找幾何圖形中的「連鎖效應」。只要掌握一組「對角與對邊」，就能解開整個系統。</p>
+                <div class="formula-box">$$\frac{a}{\sin A} = \frac{b}{\sin B} = \frac{c}{\sin C} = 2R$$</div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="canvas-container">
+                        <canvas id="sineCanvas" width="400" height="400"></canvas>
+                    </div>
+                    <div style="text-align:center; font-size:13px; color:#64748b; margin-top:10px;">
+                        <span style="color:var(--sine); font-weight:bold;">■ 已知 (橘色)</span>：一組完整的對角與對邊 &nbsp;
+                        <span style="color:#ec4899; font-weight:bold;">■ 未知 (洋紅)</span>：另一組不完整的對偶
+                    </div>
+                </div>
+                <div>
+                    <div class="control-panel">
+                        <h3>🎛️ 鎖鏈參數控制</h3>
+                        <div class="slider-row">
+                            <label style="color:var(--sine);">邊 $a$ (已知)</label>
+                            <input type="range" id="s-a" min="1" max="10" step="0.1" value="5.5">
+                            <span class="val" id="v-a">5.5</span>
+                        </div>
+                        <div class="slider-row">
+                            <label style="color:var(--sine);">角 $A$ (已知)</label>
+                            <input type="range" id="s-A" min="10" max="150" step="1" value="60">
+                            <span class="val" id="v-A">60°</span>
+                        </div>
+                        <div class="slider-row">
+                            <label style="color:#ec4899;">角 $B$ (未知)</label>
+                            <input type="range" id="s-B" min="10" max="150" step="1" value="45">
+                            <span class="val" id="v-B">45°</span>
+                        </div>
+                    </div>
+                    <div class="info-card sine-card">
+                        <h4>📊 鎖鏈計算結果</h4>
+                        <div style="font-size:14px; line-height:1.8;">
+                            <div>外接圓直徑 $2R$ = <strong id="res-2R" style="color:var(--sine);">6.35</strong></div>
+                            <div>邊 $b$ (AC) = <strong id="res-b" style="color:#ec4899;">4.49</strong></div>
+                            <div>角 $C$ = <strong id="res-C">75.0°</strong></div>
+                            <div>邊 $c$ (AB) = <strong id="res-c" style="color:#ec4899;">6.12</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card sine-card" style="margin-top:16px;">
+                <h4> 正弦定理的隱藏雷達：外接圓半徑 (2R)</h4>
+                <p>當題目出現、或暗示需要求「外接圓」時，秒選正弦定理。這是餘弦定理完全無法觸及的領域。只要看到圓與三角形共存，第一直覺請鎖定正弦。</p>
+                <div class="formula-box">$$\frac{a}{\sin A} = 2R$$</div>
+            </div>
+        </div>
+
+        <!-- Tab 4: 餘弦定理 -->
+        <div class="tab-panel" id="panel-cosine">
+            <h2 class="section-title">✂️ 武器二：餘弦定理與「夾角鉸鏈」</h2>
+            
+            <div class="info-card cosine-card">
+                <h4>核心觀念：剪刀的轉軸</h4>
+                <p>將 ∠C 想像成一把剪刀的轉軸。已知兩邊長度 (a, b)，只要夾角確定，對邊 (c) 的長度就被唯一鎖死。這就是「兩邊夾一角」的樞紐力量。</p>
+                <div class="formula-box">$$c^2 = a^2 + b^2 - 2ab \cos C$$</div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="canvas-container">
+                        <canvas id="cosineCanvas" width="400" height="400"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <div class="control-panel">
+                        <h3>🎛️ 鉸鏈參數控制</h3>
+                        <div class="slider-row">
+                            <label style="color:var(--cosine);">邊 $a$</label>
+                            <input type="range" id="c-a" min="1" max="10" step="0.1" value="4">
+                            <span class="val" id="cv-a">4.0</span>
+                        </div>
+                        <div class="slider-row">
+                            <label style="color:var(--cosine);">邊 $b$</label>
+                            <input type="range" id="c-b" min="1" max="10" step="0.1" value="3">
+                            <span class="val" id="cv-b">3.0</span>
+                        </div>
+                        <div class="slider-row">
+                            <label style="color:var(--cosine);">夾角 $C$</label>
+                            <input type="range" id="c-C" min="0" max="180" step="1" value="60">
+                            <span class="val" id="cv-C">60°</span>
+                        </div>
+                    </div>
+                    <div class="info-card cosine-card">
+                        <h4>📊 鉸鏈計算結果</h4>
+                        <div style="font-size:14px; line-height:1.8;">
+                            <div>$c^2 = a^2 + b^2 - 2ab\cos C$</div>
+                            <div>$c^2 = $ <span id="calc-c2">13.00</span></div>
+                            <div>邊 $c$ = <strong id="res-cc" style="color:var(--cosine);">3.61</strong></div>
+                            <div style="margin-top:8px; font-size:13px; color:#64748b;">
+                                修正項 $-2ab\cos C$ = <span id="calc-correct">-12.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card cosine-card" style="margin-top:16px;">
+                <h4>🔬 餘弦定理的本質：畢氏定理的終極進化</h4>
+                
+                <div class="evolution-formula">
+                    <div class="evolution-part">
+                        $$c^2 = a^2 + b^2$$
+                        <span class="evolution-label">國中畢氏定理 / 完美直角</span>
+                    </div>
+                    <div class="evolution-plus">+</div>
+                    <div class="evolution-part">
+                        $$(-2ab \cos C)$$
+                        <span class="evolution-label">高中餘弦修正項 / 角度偏差微調</span>
+                    </div>
+                </div>
+
+                <p style="font-size:14px; color:#475569; margin-top:15px;">
+                    當 ∠C = 90° 時，cos 90° = 0，修正項消失，完美退化回畢氏定理。<br>
+                    <strong>戰術意義：</strong>專門處理「缺乏直角，但已知三個邊長 (SSS)」或「已知兩邊夾一角 (SAS)」的硬核計算。
+                </p>
+            </div>
+        </div>
+
+        <!-- Tab 5: SSA 雙重宇宙 -->
+        <div class="tab-panel" id="panel-ssa">
+            <h2 class="section-title">⚠️ 高手也會踩空的陷阱：SSA 的雙重宇宙</h2>
+            
+            <div class="info-card danger-card">
+                <h4>🚨 危險信號</h4>
+                <p>當題目給定「兩邊與一對角 (SSA)」，且要求算另一個角時，極大機率隱藏陷阱。</p>
+                <p><strong>原因：</strong>正弦值為正 (sin θ > 0) 時，θ 可能是銳角，也可能是鈍角 (180° - θ)。</p>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="canvas-container">
+                        <canvas id="ssaCanvas" width="400" height="400"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <div class="control-panel">
+                        <h3>🎛️ SSA 參數控制</h3>
+                        <div class="slider-row">
+                            <label>角 $A$</label>
+                            <input type="range" id="ss-A" min="10" max="80" step="1" value="30">
+                            <span class="val" id="ssv-A">30°</span>
+                        </div>
+                        <div class="slider-row">
+                            <label>鄰邊 $b$</label>
+                            <input type="range" id="ss-b" min="2" max="10" step="0.1" value="6">
+                            <span class="val" id="ssv-b">6.0</span>
+                        </div>
+                        <div class="slider-row">
+                            <label>對邊 $a$</label>
+                            <input type="range" id="ss-a" min="1" max="12" step="0.1" value="4">
+                            <span class="val" id="ssv-a">4.0</span>
+                        </div>
+                    </div>
+                    <div class="info-card danger-card">
+                        <h4>📊 SSA 診斷結果</h4>
+                        <div style="font-size:14px; line-height:1.8;">
+                            <div>臨界高 $h = b\sin A$ = <strong id="ss-h">3.00</strong></div>
+                            <div>判別式 $D$ = <strong id="ss-D">7.00</strong></div>
+                            <div>解的個數：<strong id="ss-count" style="color:var(--danger);">2 解 (模糊情形)</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card danger-card" style="margin-top:16px;">
+                <h4>🛡️ 學霸鐵律：大邊對大角檢查</h4>
+                <p>算出 sin 值後，務必回頭檢查「大邊對大角」，刪除不合理的多餘解。如果算出的角 B 對應的邊 b 小於邊 a，但角 B 卻大於角 A，這個解必須刪除！</p>
+            </div>
+        </div>
+
+        <!-- Tab 6: 實戰兵法 -->
+        <div class="tab-panel" id="panel-tactics">
+            <h2 class="section-title">⚔️ 建中鬼才的實戰兵法：多選題刪去漏斗</h2>
+            
+            <div class="funnel-container">
+                <div style="font-weight:bold; font-size:18px; color:var(--primary);">5 個選項</div>
+                <div class="flow-arrow">⬇️</div>
+                <div class="funnel-layer funnel-1">
+                    <strong>Layer 1 (粗略掃描)</strong><br>
+                    檢查極端值與正負號 (例如：鈍角的餘弦值必為負)。秒殺明顯錯誤選項。
+                </div>
+                <div class="flow-arrow">⬇️</div>
+                <div class="funnel-layer funnel-2">
+                    <strong>Layer 2 (條件反推)</strong><br>
+                    將選項代回題干。如果選項 A 成立會導致三角形內角和 > 180°，則 A 必錯。
+                </div>
+                <div class="flow-arrow">⬇️</div>
+                <div class="funnel-layer funnel-3">
+                    <strong>Layer 3 (精確打擊)</strong><br>
+                    只針對剩下的 2 個選項啟動耗時的正/餘弦定理計算。
+                </div>
+                <div class="flow-arrow">⬇️</div>
+                <div class="funnel-result">2-3 個正確答案 </div>
+            </div>
+
+            <div class="grid-2" style="margin-top:20px;">
+                <div class="info-card">
+                    <h4>🔍 逆向工程：多選題「選項關聯性」雷達</h4>
+                    <p><strong>戰術法則：尋找矛盾與包容關係。</strong></p>
+                    <ul style="margin:8px 0; padding-left:20px; font-size:14px;">
+                        <li>如果兩個選項互斥 (如邊長 c=5 與 c=8)，則至多只有一個對。</li>
+                        <li>如果選項之間具備因果推導關係，一旦源頭正確，後續連鎖必定正確。</li>
+                    </ul>
+                    <p style="font-size:13px; color:#64748b;">範例：若 (A) sin C = 1/2 成立，則 (B) ∠C = 30° 與 (C) ∠C = 150° 都有可能 (SSA 陷阱雙重解)。</p>
+                </div>
+                <div class="info-card">
+                    <h4>🏆 終極藍圖：帶著這把萬能鑰匙上考場</h4>
+                    <p><strong>洞察工具：</strong>正弦定理尋找「鎖鏈」，餘弦定理掌握「鉸鏈」。</p>
+                    <p><strong>依賴系統：</strong>拋棄直覺猜測，嚴格遵循「決策矩陣」與「流程圖」。</p>
+                    <p><strong>降維打擊：</strong>運用「學霸視角」與「刪去漏斗」，將複雜多選題簡化為邏輯判斷。</p>
+                    <div style="margin-top:12px; padding:12px; background:#f0f9ff; border-radius:8px; text-align:center; font-weight:bold; color:var(--primary);">
+                        面對 108 新課綱的幾何挑戰，<br>你不再是被動猜題的考生，<br>而是精準丈量分數的建築師。
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-tip">
+                💡 <strong>學霸解題三原則：</strong><br>
+                1. <strong>不依賴靈感</strong>：學霸解題不是靠靈光一閃，而是嚴格執行條件盤點 (盤點 SSS, SAS 等條件)。<br>
+                2. <strong>資訊守恆</strong>：所有的三角形計算，本質上都是在做「資訊的等價交換」。只要有三個獨立條件 (至少含一邊)，就能換出剩下所有的邊與角。<br>
+                3. <strong>預見終點</strong>：在動筆寫下第一個數字前，腦中已經跑完決策流程圖。
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ️ 修復：更穩健的 Tab 切換邏輯
+    function switchTab(tab) {
+        // 1. 移除所有 active 狀態
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        
+        // 2. 啟用目標 Tab 和 Panel
+        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+        const targetPanel = document.getElementById(`panel-${tab}`);
+        
+        if (targetBtn) targetBtn.classList.add('active');
+        if (targetPanel) targetPanel.classList.add('active');
+        
+        // 3. 延遲繪製 Canvas (確保 Panel 已顯示)
+        setTimeout(() => {
+            if (tab === 'sine') drawSine();
+            if (tab === 'cosine') drawCosine();
+            if (tab === 'ssa') drawSSA();
+        }, 50);
+    }
+
+    // 診斷矩陣選擇
+    const matrixDetails = {
+        sss: { title: 'SSS (三邊) → 餘弦定理', desc: '已知三邊長度，使用餘弦定理的推論公式尋找夾角。', formula: '$$\\cos A = \\frac{b^2 + c^2 - a^2}{2bc}$$' },
+        sas: { title: 'SAS (兩邊一夾角) → 餘弦定理', desc: '已知兩邊及其夾角，使用餘弦定理直接求出第三邊。', formula: '$$c^2 = a^2 + b^2 - 2ab\\cos C$$' },
+        asa: { title: 'ASA / AAS (已知兩角) → 正弦定理', desc: '透過內角和 180° 找出第三角，然後啟動正弦定理的鎖鏈效應。', formula: '$$\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C}$$' },
+        ssa: { title: 'SSA (兩邊一對角) → 正弦定理 (危險！)', desc: '危險地帶！啟動正弦尋找對角，但要注意 sin θ > 0 時 θ 可能是銳角或鈍角。務必檢查「大邊對大角」。', formula: '$$\\sin B = \\frac{b \\sin A}{a}$$' },
+        circum: { title: '外接圓 (R) → 正弦定理', desc: '毫無懸念，唯一解。只要看到外接圓，秒選正弦定理。', formula: '$$\\frac{a}{\\sin A} = 2R$$' }
+    };
+
+    function selectMatrix(row) {
+        document.querySelectorAll('#matrix-table tr').forEach(r => r.classList.remove('selected'));
+        row.classList.add('selected');
+        const type = row.dataset.type;
+        const detail = matrixDetails[type];
+        const detailEl = document.getElementById('matrix-detail');
+        detailEl.style.display = 'block';
+        document.getElementById('matrix-detail-title').innerText = detail.title;
+        document.getElementById('matrix-detail-desc').innerText = detail.desc;
+        document.getElementById('matrix-detail-formula').innerHTML = detail.formula;
+        MathJax.typesetPromise([detailEl]);
+    }
+
+    // 正弦定理 Canvas (嚴格外心公式)
+    function drawSine() {
+        const canvas = document.getElementById('sineCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        
+        const a = parseFloat(document.getElementById('s-a').value);
+        const A_deg = parseFloat(document.getElementById('s-A').value);
+        const B_deg = parseFloat(document.getElementById('s-B').value);
+        
+        const A = A_deg * Math.PI / 180;
+        const B = B_deg * Math.PI / 180;
+        const C = Math.PI - A - B;
+        
+        const R = a / (2 * Math.sin(A));
+        const b = 2 * R * Math.sin(B);
+        const c = 2 * R * Math.sin(C);
+        
+        ctx.clearRect(0, 0, W, H);
+        
+        const pA = { x: 0, y: 0 };
+        const pC = { x: b, y: 0 };
+        const pB = { x: c * Math.cos(A), y: c * Math.sin(A) };
+        
+        const D = 2 * (pA.x * (pB.y - pC.y) + pB.x * (pC.y - pA.y) + pC.x * (pA.y - pB.y));
+        let pO = { x: 0, y: 0 };
+        
+        if (Math.abs(D) > 1e-10) {
+            const pA_sq = pA.x * pA.x + pA.y * pA.y;
+            const pB_sq = pB.x * pB.x + pB.y * pB.y;
+            const pC_sq = pC.x * pC.x + pC.y * pC.y;
+            
+            pO.x = (pA_sq * (pB.y - pC.y) + pB_sq * (pC.y - pA.y) + pC_sq * (pA.y - pB.y)) / D;
+            pO.y = (pA_sq * (pC.x - pB.x) + pB_sq * (pA.x - pC.x) + pC_sq * (pB.x - pA.x)) / D;
+        }
+        
+        const points = [pA, pB, pC, pO];
+        let minX = Math.min(...points.map(p => p.x));
+        let maxX = Math.max(...points.map(p => p.x));
+        let minY = Math.min(...points.map(p => p.y));
+        let maxY = Math.max(...points.map(p => p.y));
+        
+        minX = Math.min(minX, pO.x - R);
+        maxX = Math.max(maxX, pO.x + R);
+        minY = Math.min(minY, pO.y - R);
+        maxY = Math.max(maxY, pO.y + R);
+        
+        const padding = 40;
+        const contentWidth = maxX - minX;
+        const contentHeight = maxY - minY;
+        
+        const scaleX = (W - 2 * padding) / contentWidth;
+        const scaleY = (H - 2 * padding) / contentHeight;
+        const scale = Math.min(scaleX, scaleY);
+        
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        
+        function toCanvas(p) {
+            return {
+                x: W / 2 + (p.x - centerX) * scale,
+                y: H / 2 - (p.y - centerY) * scale
+            };
+        }
+        
+        const cA = toCanvas(pA);
+        const cB = toCanvas(pB);
+        const cC = toCanvas(pC);
+        const cO = toCanvas(pO);
+        const canvasR = R * scale;
+        
+        ctx.save();
+        ctx.strokeStyle = '#0ea5e9';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.arc(cO.x, cO.y, canvasR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#0ea5e9';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('外接圓 (2R)', cO.x + canvasR * 0.5, cO.y - canvasR * 0.8);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.fillStyle = 'rgba(249, 115, 22, 0.1)';
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cA.x, cA.y);
+        ctx.lineTo(cB.x, cB.y);
+        ctx.lineTo(cC.x, cC.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+        
+        ctx.save();
+        ctx.font = 'bold 16px Arial';
+        [cA, cB, cC].forEach(p => {
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText('A', cA.x - 20, cA.y + 5);
+        ctx.fillText('B', cB.x - 5, cB.y - 15);
+        ctx.fillText('C', cC.x + 10, cC.y + 5);
+        
+        ctx.fillStyle = '#f97316';
+        ctx.fillText(`a=${a.toFixed(1)}`, (cB.x + cC.x) / 2 + 10, (cB.y + cC.y) / 2);
+        ctx.fillStyle = '#ec4899';
+        ctx.fillText(`b=${b.toFixed(1)}`, (cA.x + cB.x) / 2 - 30, (cA.y + cB.y) / 2);
+        ctx.fillText(`c=${c.toFixed(1)}`, (cA.x + cC.x) / 2, cA.y + 20);
+        ctx.restore();
+        
+        document.getElementById('res-2R').innerText = (2 * R).toFixed(2);
+        document.getElementById('res-b').innerText = b.toFixed(2);
+        document.getElementById('res-C').innerText = (C * 180 / Math.PI).toFixed(1) + '°';
+        document.getElementById('res-c').innerText = c.toFixed(2);
+    }
+
+    // 餘弦定理 Canvas
+    function drawCosine() {
+        const canvas = document.getElementById('cosineCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        
+        const a = parseFloat(document.getElementById('c-a').value);
+        const b = parseFloat(document.getElementById('c-b').value);
+        const C = parseFloat(document.getElementById('c-C').value) * Math.PI / 180;
+        const c = Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(C));
+        const correct = -2 * a * b * Math.cos(C);
+        
+        const scale = 25;
+        const cx = 100, cy = 300;
+        
+        ctx.clearRect(0, 0, W, H);
+        
+        const pC = { x: cx, y: cy };
+        const pA = { x: cx + b * scale, y: cy };
+        const pB = { x: cx + a * scale * Math.cos(C), y: cy - a * scale * Math.sin(C) };
+        
+        ctx.save();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(pC.x, pC.y);
+        ctx.lineTo(pA.x, pA.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(pC.x, pC.y);
+        ctx.lineTo(pB.x, pB.y);
+        ctx.stroke();
+        ctx.restore();
+        
+        ctx.save();
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(pA.x, pA.y);
+        ctx.lineTo(pB.x, pB.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(pC.x, pC.y, 30, 0, -C, true);
+        ctx.stroke();
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`C=${(C * 180 / Math.PI).toFixed(0)}°`, pC.x + 35, pC.y - 10);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = '#10b981';
+        ctx.fillText(`a=${a.toFixed(1)}`, (pC.x + pB.x) / 2 - 30, (pC.y + pB.y) / 2);
+        ctx.fillText(`b=${b.toFixed(1)}`, (pC.x + pA.x) / 2, pC.y + 20);
+        ctx.fillStyle = '#ec4899';
+        ctx.fillText(`c=${c.toFixed(1)}`, (pA.x + pB.x) / 2 + 10, (pA.y + pB.y) / 2);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(pC.x, pC.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        
+        document.getElementById('calc-c2').innerText = (a * a + b * b + correct).toFixed(2);
+        document.getElementById('res-cc').innerText = c.toFixed(2);
+        document.getElementById('calc-correct').innerText = correct.toFixed(2);
+    }
+
+    // SSA Canvas
+    function drawSSA() {
+        const canvas = document.getElementById('ssaCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        
+        const A = parseFloat(document.getElementById('ss-A').value) * Math.PI / 180;
+        const b = parseFloat(document.getElementById('ss-b').value);
+        const a = parseFloat(document.getElementById('ss-a').value);
+        const h = b * Math.sin(A);
+        const D = a * a - h * h;
+        
+        const scale = 25;
+        const ox = 80, oy = 320;
+        
+        ctx.clearRect(0, 0, W, H);
+        
+        ctx.save();
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(W - 20, oy);
+        ctx.stroke();
+        ctx.restore();
+        
+        ctx.save();
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(ox, oy, 30, 0, -A, true);
+        ctx.stroke();
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('A', ox + 35, oy - 10);
+        ctx.restore();
+        
+        const bx = ox + b * scale * Math.cos(A);
+        const by = oy - b * scale * Math.sin(A);
+        ctx.save();
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+        ctx.fillStyle = '#2563eb';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`b=${b.toFixed(1)}`, (ox + bx) / 2 - 20, (oy + by) / 2);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx, oy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`h=${h.toFixed(2)}`, bx + 5, (by + oy) / 2);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.arc(bx, by, a * scale, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+        
+        let solutions = 0;
+        if (D >= 0) {
+            const sqrtD = Math.sqrt(D);
+            const bCosA = b * Math.cos(A);
+            const c1 = bCosA - sqrtD;
+            const c2 = bCosA + sqrtD;
+            
+            if (c1 > 1e-4) {
+                solutions++;
+                const cx1 = ox + c1 * scale;
+                ctx.save();
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(cx1, oy);
+                ctx.stroke();
+                ctx.fillStyle = '#10b981';
+                ctx.beginPath();
+                ctx.arc(cx1, oy, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(`B₁`, cx1 - 10, oy + 20);
+                ctx.restore();
+            }
+            if (c2 > 1e-4 && Math.abs(c1 - c2) > 1e-4) {
+                solutions++;
+                const cx2 = ox + c2 * scale;
+                ctx.save();
+                ctx.strokeStyle = '#8b5cf6';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(cx2, oy);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#8b5cf6';
+                ctx.beginPath();
+                ctx.arc(cx2, oy, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(`B₂`, cx2 - 10, oy + 20);
+                ctx.restore();
+            }
+        }
+        
+        ctx.save();
+        ctx.fillStyle = '#2563eb';
+        ctx.beginPath();
+        ctx.arc(bx, by, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('B', bx - 15, by - 10);
+        ctx.restore();
+        
+        document.getElementById('ss-h').innerText = h.toFixed(2);
+        document.getElementById('ss-D').innerText = D.toFixed(2);
+        const countEl = document.getElementById('ss-count');
+        if (solutions === 0) { countEl.innerText = '0 解 (無解)'; countEl.style.color = '#94a3b8'; }
+        else if (solutions === 1) { countEl.innerText = '1 解 (唯一解)'; countEl.style.color = '#10b981'; }
+        else { countEl.innerText = '2 解 (模糊情形 ⚠️)'; countEl.style.color = '#ef4444'; }
+    }
+
+    // 事件綁定
+    document.getElementById('s-a').addEventListener('input', (e) => { document.getElementById('v-a').innerText = parseFloat(e.target.value).toFixed(1); drawSine(); });
+    document.getElementById('s-A').addEventListener('input', (e) => { document.getElementById('v-A').innerText = e.target.value + '°'; drawSine(); });
+    document.getElementById('s-B').addEventListener('input', (e) => { document.getElementById('v-B').innerText = e.target.value + '°'; drawSine(); });
+    
+    document.getElementById('c-a').addEventListener('input', (e) => { document.getElementById('cv-a').innerText = parseFloat(e.target.value).toFixed(1); drawCosine(); });
+    document.getElementById('c-b').addEventListener('input', (e) => { document.getElementById('cv-b').innerText = parseFloat(e.target.value).toFixed(1); drawCosine(); });
+    document.getElementById('c-C').addEventListener('input', (e) => { document.getElementById('cv-C').innerText = e.target.value + '°'; drawCosine(); });
+    
+    document.getElementById('ss-A').addEventListener('input', (e) => { document.getElementById('ssv-A').innerText = e.target.value + '°'; drawSSA(); });
+    document.getElementById('ss-b').addEventListener('input', (e) => { document.getElementById('ssv-b').innerText = parseFloat(e.target.value).toFixed(1); drawSSA(); });
+    document.getElementById('ss-a').addEventListener('input', (e) => { document.getElementById('ssv-a').innerText = parseFloat(e.target.value).toFixed(1); drawSSA(); });
+
+    // 初始化
+    setTimeout(() => {
+        drawSine();
+        drawCosine();
+        drawSSA();
+        MathJax.typesetPromise();
+    }, 200);
+</script>
+
+</body>
+</html>
